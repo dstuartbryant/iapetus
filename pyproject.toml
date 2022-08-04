@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iapetus"
+version = "0.0.2"
+authors = [
+  { name="D. Stuart Bryant" },
+]
+description = "An object filtering (targret tracking) research package."
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.10.2"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/dstuartbryant/iapetus"
+"Docs" = "https://dstuartbryant.github.io/iapetus/"
+
+[tool.setuptools]
+py-modules = []
