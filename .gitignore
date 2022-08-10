@@ -255,3 +255,8 @@ cython_debug/
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,python,visualstudiocode,c++
+
+
+# Ignore stuart workspace items
+local_dev_requirements.txt
+scratch.py
