@@ -10,9 +10,22 @@ from ..linalg import Vector
 
 
 class StateVector(Vector):
-    """State vector base class."""
+    """State vector base class.
 
-    def __init__(self, arg):
+    Attributes:
+        pos (Vector): position vector.
+        pos_units (Unit): position vector measurement units.
+        vel (Vector): velocity vector.
+        vel_units (Unit): velocity vector measurement units.
+        acc (Vector, optional): acceleration vector.
+        acc_units (Unit, optional): acceleration vector measurement units.
+        reference_frame (RefFrame): indicates reference frame for all vector
+            coordinates.
+        vector: concatenation of all used vectors.
+
+    """
+
+    def __init__(self, pos: Vector, vel: Vector):
         pass
 
 
