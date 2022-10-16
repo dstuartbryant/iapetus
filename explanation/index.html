@@ -61,6 +61,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#state-transition-matrix" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -210,9 +215,38 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Explanation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Explanation
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#state-transition-matrix" class="md-nav__link">
+    State Transition Matrix
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -236,6 +270,21 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#state-transition-matrix" class="md-nav__link">
+    State Transition Matrix
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -250,7 +299,17 @@
 
   <h1>Explanation</h1>
 
-
+<h2 id="state-transition-matrix">State Transition Matrix</h2>
+<p>$$
+\mathbf{x}_i = \Phi(t_i, t_j)\mathbf{x}_j
+$$
+In the above expression</p>
+<ul>
+<li><span class="arithmatex">\(\Phi(\cdot, \cdot)\)</span> is a state transition matrix,</li>
+<li><span class="arithmatex">\(\mathbf{x}_i\)</span> is a state vector at time <span class="arithmatex">\(t_i\)</span>,</li>
+<li><span class="arithmatex">\(\mathbf{x}_j\)</span> is a state vector at time <span class="arithmatex">\(t_j\)</span>,</li>
+</ul>
+<p>and note that <span class="arithmatex">\(t_i \leq t_j\)</span> or <span class="arithmatex">\(t_i \geq t_j\)</span> can be true for a given instance.</p>
 
               
             </article>

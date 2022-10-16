@@ -243,6 +243,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#iapetus.core.linalg.stm.straight_constant_velocity" class="md-nav__link">
+    straight_constant_velocity()
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -307,6 +314,13 @@
         <li class="md-nav__item">
   <a href="#iapetus.core.linalg.stm" class="md-nav__link">
     iapetus.core.linalg.stm
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iapetus.core.linalg.stm.straight_constant_velocity" class="md-nav__link">
+    straight_constant_velocity()
   </a>
   
 </li>
@@ -393,14 +407,7 @@ not anticipated.</p>
   <div class="doc doc-contents first">
   
       <p>State transition matrix module.</p>
-<div class="arithmatex">\[
-x(t) = \Phi(t, t_k)x_k
-\]</div>
 
-<details class="todo">
-  <summary>Dev a baseline STM that assumes it's getting np.ndarray inputs - likely</summary>
-  <p>all that is currently necessary</p>
-</details>
   
 
   <div class="doc doc-children">
@@ -412,6 +419,82 @@ x(t) = \Phi(t, t_k)x_k
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="iapetus.core.linalg.stm.straight_constant_velocity" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">straight_constant_velocity</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Returns a 2D state transition matrix modeling straight movement with
+constant velocity.</p>
+<p>I.e., an object propagated with this model will move in the same
+direction without turning at constant speed.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>dt</code></td>
+          <td>
+                <code>float</code>
+          </td>
+          <td><p>time increment (aka sample rate)</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+      <details class="quote">
+        <summary>Source code in <code>iapetus/core/linalg/stm.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">straight_constant_velocity</span><span class="p">(</span><span class="n">dt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a 2D state transition matrix modeling straight movement with</span>
+<span class="sd">    constant velocity.</span>
+
+<span class="sd">    I.e., an object propagated with this model will move in the same</span>
+<span class="sd">    direction without turning at constant speed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">            dt (float): time increment (aka sample rate)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">block</span><span class="p">(</span>
+        <span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span><span class="p">],</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)]]</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
 
 
 
