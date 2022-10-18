@@ -26,8 +26,8 @@ class Random:
         self.seed = seed
         self.r = np.random.default_rng(seed)
 
-    def gauss_zero_mean(self, mu, cov):
-        """Returns drawn sample from a multivariate normal distribution.
+    def gauss_multivar_sample(self, mu, cov):
+        """Returns sample drawn from a multivariate normal distribution.
 
         Args:
             mu (array_like): 1-D, of length N
