@@ -26,7 +26,7 @@ class Random:
         self.seed = seed
         self.r = np.random.default_rng(seed)
 
-    def gauss_multivar_sample(self, mu, cov):
+    def gauss_multivar(self, mu, cov):
         """Returns sample drawn from a multivariate normal distribution.
 
         Args:
@@ -36,3 +36,14 @@ class Random:
         Returns 1-D numpy.ndarray.
         """
         return self.r.multivariate_normal(mu, cov)
+
+    def uniform(self):
+        """Returns sample drawn from a standard uniform distribution.
+
+        **Standard** implies the distribution is bounded by 0 and 1.
+
+        Returns:
+            (float): random number x, such that 0 <= x <= 1
+        """
+
+        return self.r.uniform(low=0, high=1)
