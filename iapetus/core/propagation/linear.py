@@ -3,7 +3,7 @@
 import numpy as np
 
 from ..linalg.stm import straight_constant_velocity
-from ..state import State
+from ..state.state import State
 
 
 class StraightConstantVelocity:

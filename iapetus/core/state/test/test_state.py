@@ -1,8 +1,8 @@
 from types import NoneType
 
 import numpy as np
-from iapetus.core import state
 from iapetus.core.linalg import Vector
+from iapetus.core.state import state
 
 X = [1, 2, 3, 4]
 X_acc = X + [5, 6]

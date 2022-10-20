@@ -1,7 +1,7 @@
 """Linear propagator tests."""
 
-from iapetus.core import state
 from iapetus.core.propagation.linear import StraightConstantVelocity
+from iapetus.core.state import state
 
 
 def test_StraightConstantVelocity():
