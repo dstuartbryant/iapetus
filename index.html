@@ -74,7 +74,9 @@
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="." title="Iapetus" class="md-header__button md-logo" aria-label="Iapetus" data-md-component="logo">
       
@@ -107,13 +109,88 @@
     
   </nav>
   
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+    
+  
+
+
+  <li class="md-tabs__item">
+    <a href="." class="md-tabs__link md-tabs__link--active">
+      Home
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="tutorials/" class="md-tabs__link">
+      Tutorials
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="how-to-guides/" class="md-tabs__link">
+      How-To Guides
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="reference/" class="md-tabs__link">
+      Reference
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="explanation/phd_filter/" class="md-tabs__link">
+        Explanation
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
 </header>
     
     <div class="md-container" data-md-component="container">
       
       
-        
-          
         
       
       <main class="md-main" data-md-component="main">
@@ -126,8 +203,10 @@
                   <div class="md-sidebar__inner">
                     
 
+  
 
-<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="." title="Iapetus" class="md-nav__button md-logo" aria-label="Iapetus" data-md-component="logo">
       
@@ -157,47 +236,9 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Home
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="." class="md-nav__link md-nav__link--active">
         Home
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#table-of-contents" class="md-nav__link">
-    Table Of Contents
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#project-overview" class="md-nav__link">
-    Project Overview
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -255,10 +296,57 @@
   
   
   
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5">
+          Explanation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Explanation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Explanation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
     <li class="md-nav__item">
-      <a href="explanation/" class="md-nav__link">
-        Explanation
+      <a href="explanation/phd_filter/" class="md-nav__link">
+        Probability Hypothesis Density
       </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="explanation/stm/" class="md-nav__link">
+        State Transition Matrix
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -283,28 +371,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#table-of-contents" class="md-nav__link">
-    Table Of Contents
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#project-overview" class="md-nav__link">
-    Project Overview
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -323,22 +389,26 @@
 <p>Its aim is to provide a framework for researching, demonstrating, and sharing
 single- and multi-object filtering (aka target tracking) approaches and
 implementations. </p>
-<h2 id="table-of-contents">Table Of Contents</h2>
-<p>The documentation follows the best practice for
+<!-- ## Table Of Contents
+
+The documentation follows the best practice for
 project documentation as described by Daniele Procida
-in the <a href="https://diataxis.fr/">Diátaxis documentation framework</a>
-and consists of four separate parts:</p>
-<ol>
-<li><a href="definitions/">Definitions</a></li>
-<li><a href="tutorials/">Tutorials</a></li>
-<li><a href="how-to-guides/">How-To Guides</a></li>
-<li><a href="reference/">Reference</a></li>
-<li><a href="explanation/">Explanation</a></li>
-</ol>
-<p>Quickly find what you're looking for depending on
-your use case by looking at the different pages.</p>
-<h2 id="project-overview">Project Overview</h2>
-<p>See READEM.md for now.</p>
+in the [Diátaxis documentation framework](https://diataxis.fr/)
+and consists of four separate parts:
+
+1. [Definitions](definitions.md)
+2. [Tutorials](tutorials.md)
+3. [How-To Guides](how-to-guides.md)
+4. [Reference](reference.md)
+5. [Explanation](explanation.md)
+
+Quickly find what you're looking for depending on
+your use case by looking at the different pages.
+
+## Project Overview
+
+See READEM.md for now. -->
+
 <!-- ::: iapetus -->
 
               
@@ -392,7 +462,7 @@ your use case by looking at the different pages.</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.expand"], "search": "assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
       <script src="assets/javascripts/bundle.6c7ad80a.min.js"></script>
