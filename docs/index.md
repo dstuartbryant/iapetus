@@ -6,7 +6,7 @@ Its aim is to provide a framework for researching, demonstrating, and sharing
 single- and multi-object filtering (aka target tracking) approaches and
 implementations. 
 
-## Table Of Contents
+<!-- ## Table Of Contents
 
 The documentation follows the best practice for
 project documentation as described by Daniele Procida
@@ -24,6 +24,6 @@ your use case by looking at the different pages.
 
 ## Project Overview
 
-See READEM.md for now.
+See READEM.md for now. -->
 
 <!-- ::: iapetus -->

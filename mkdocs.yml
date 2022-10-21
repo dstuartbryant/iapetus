@@ -2,6 +2,11 @@ site_name: Iapetus
 
 theme:
   name: "material"
+  features:
+    # - navigation.indexes
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.expand
 
 plugins:
   - mkdocstrings
@@ -23,4 +28,6 @@ nav:
   - tutorials.md
   - How-To Guides: how-to-guides.md
   - reference.md
-  - explanation.md
+  - Explanation: 
+    - Probability Hypothesis Density: explanation/phd_filter.md
+    - State Transition Matrix: explanation/stm.md
