@@ -61,6 +61,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#single-target-bayes-filter" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -317,9 +322,38 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Probability Hypothesis Density
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Probability Hypothesis Density
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#single-target-bayes-filter" class="md-nav__link">
+    Single Target Bayes Filter
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -364,6 +398,21 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#single-target-bayes-filter" class="md-nav__link">
+    Single Target Bayes Filter
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -378,7 +427,44 @@
 
   <h1>Probability Hypothesis Density</h1>
 
-
+<p>First, take a look at the Single Target Bayes Filter. This will provide background on the unerlying notions, mathematics, and notation to help frame discussion of the Probability Hypothesis Density (PHD) and its filter implementation.</p>
+<h2 id="single-target-bayes-filter">Single Target Bayes Filter</h2>
+<p>Say that a target <em>had</em> state <span class="arithmatex">\(\mathbf{x}'\)</span> at time step <span class="arithmatex">\(k\)</span>, and we're interested in its state <span class="arithmatex">\(\mathbf{x}\)</span> at time step <span class="arithmatex">\(k+1.\)</span> At time <span class="arithmatex">\(k+1\)</span> we have a collection of observations <span class="arithmatex">\(Z^{k+1}=Z^k \cup \mathbf{z_{k+1}}\)</span>, where <span class="arithmatex">\(Z^k:\mathbf{z}_1, \ldots, \mathbf{z}_k\)</span> is a time sequence of collected observations at time step <span class="arithmatex">\(k\)</span>.</p>
+<p>Define</p>
+<div class="arithmatex">\[
+\begin{equation}
+f_{k+1|k}(\mathbf{x})
+    \triangleq 
+        \int 
+            f_{k+1|k}(\mathbf{x}|\mathbf{x}')
+            \cdot 
+            f_{k|k}(\mathbf{x}'|Z^k)d\mathbf{x}',
+% 
+\label{eq1} \tag{1}
+\end{equation}
+\]</div>
+<div class="arithmatex">\[\begin{equation}
+f_{k+1|k+1}(\mathbf{x})
+    \triangleq
+        \frac{
+                f_{k+1}(\mathbf{z}_{k+1}|\mathbf{x})
+                \cdot
+                f_{k+1|k}(\mathbf{x}|Z^k)
+            }
+            {
+                \int f_{k+1}(\mathbf{z}_{k+1}|\mathbf{y})
+                \cdot
+                f_{k+1|k}(\mathbf{y}|Z^k)d\mathbf{y}
+            },
+% 
+\label{eq2} \tag{2}
+\end{equation}\]</div>
+<p>where</p>
+<ul>
+<li><span class="arithmatex">\(f_{k|k}(\mathbf{x}'|Z^k)\)</span> is the prior probablity density for the target was in state <span class="arithmatex">\(\mathbf{x}'\)</span>,</li>
+<li>the probability density resulting from the product <span class="arithmatex">\(f_{k+1|k}(\mathbf{x}|\mathbf{x}')\cdot f_{k|k}(\mathbf{x}'|Z^k)\)</span> represents the target having state <span class="arithmatex">\(\mathbf{x}\)</span> at time <span class="arithmatex">\(k+1\)</span> given that it had state <span class="arithmatex">\(\mathbf{x}'\)</span> at time <span class="arithmatex">\(k\)</span>,</li>
+<li><span class="arithmatex">\(\ldots\)</span> to be continuted <span class="arithmatex">\(\ldots\)</span></li>
+</ul>
 
               
             </article>
