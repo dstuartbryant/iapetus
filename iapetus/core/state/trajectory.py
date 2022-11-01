@@ -55,6 +55,13 @@ class Trajectory:
     def _state_vectors(self):
         return [x.vector for x in self.states]
 
+    def _state_timestamps(self):
+        return [x.time for x in self.states]
+
     @property
     def state_vectors(self):
         return self._state_vectors()
+
+    @property
+    def state_timestamps(self):
+        return self._state_timestamps()
