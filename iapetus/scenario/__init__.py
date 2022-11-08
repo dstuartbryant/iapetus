@@ -18,6 +18,15 @@ move along side each other, at close range. Tuning scenario parameters to
 simulate such circumstances adds further complexity. 
 
 
+Scenarios Have:
+* trajectory(ies)
+* sensor(s)
+* surveillance region(s)
+* illustrations
+
+
+
+
 Scenario Creation ConOps
 ------------------------
 
