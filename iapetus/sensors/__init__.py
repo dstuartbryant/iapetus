@@ -70,6 +70,9 @@ Sensors Have
 * on/off switch
 * state (static or in motion)
 * observation models
+* aperture
+* SNR
+* Figure(s) of merit
 * fields of view
 * fields of regard
 
@@ -77,3 +80,30 @@ Sensors Have
 
 
 """
+
+from pydantic import BaseModel, Field
+
+from ..core.state.state import State
+
+
+class Sensor(BaseModel):
+    """Sensor model base class."""
+
+    name: str
+    on_switch: bool = True
+    state: State
+    static: bool = True
+    obs_model: object  # FOR NOW FIGURE THIS OUT FOR SIMPLE DEMO CASES, I.E. as simple as H = [I_2, 0_2]
+    aperture: object
+    snr: float
+    figures_of_merit: object
+
+    def field_of_regard(self):
+        raise NotImplementedError
+
+    def field_of_view(self):
+        raise NotImplementedError
+
+
+class OmniSensor(Sensor):
+    pass
