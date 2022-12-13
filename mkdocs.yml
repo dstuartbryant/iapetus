@@ -29,5 +29,6 @@ nav:
   - How-To Guides: how-to-guides.md
   - reference.md
   - Explanation: 
+    - Single Target Bayes Filter: explanation/single_target_bayes_filter.md
     - Probability Hypothesis Density: explanation/phd_filter.md
     - State Transition Matrix: explanation/stm.md
