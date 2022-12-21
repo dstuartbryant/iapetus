@@ -1,4 +1,7 @@
-Say that a target *had* state \(\mathbf{x}'\) at time step $k$, and we're interested in its state \(\mathbf{x}\) at time step $k+1.$ At time $k+1$ we have a collection of observations $Z^{k+1}=Z^k \cup \mathbf{z_{k+1}}$, where $Z^k:\mathbf{z}_1, \ldots, \mathbf{z}_k$ is a time sequence of collected observations at time step $k$.
+
+
+
+Following from [Mahler 2007 book], say that a target *had* state \(\mathbf{x}'\) at time step $k$, and we're interested in its state \(\mathbf{x}\) at time step $k+1.$ At time $k+1$ we have a collection of observations $Z^{k+1}=Z^k \cup \mathbf{z_{k+1}}$, where $Z^k:\mathbf{z}_1, \ldots, \mathbf{z}_k$ is a time sequence of collected observations at time step $k$.
 
 Define
 

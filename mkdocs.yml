@@ -17,6 +17,7 @@ markdown_extensions:
   - def_list
   - pymdownx.tasklist:
       custom_checkbox: true
+  - attr_list
 
 extra_javascript:
   - javascripts/mathjax.js
