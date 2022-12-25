@@ -59,3 +59,6 @@ The `view` module contains tools for plotting.
 
 
 
+# For contributing
+## Bib citation styles
+See https://github.com/citation-style-language/styles

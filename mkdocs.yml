@@ -10,17 +10,25 @@ theme:
 
 plugins:
   - mkdocstrings
+  - bibtex:
+      bib_file: "bibref/iapetus.bib"
+      csl_file: "bibref/ieee.csl"
+      cite_inline: false
 
 markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
   - pymdownx.arithmatex:
       generic: true
-  - def_list
+  - pymdownx.details
   - pymdownx.tasklist:
       custom_checkbox: true
-  - attr_list
+  - pymdownx.superfences
 
 extra_javascript:
-  - javascripts/mathjax.js
+  # - javascripts/mathjax.js   # Removing this line for 404 warn. Removal doesn't seem to be an issue.
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
@@ -33,3 +41,4 @@ nav:
     - Single Target Bayes Filter: explanation/single_target_bayes_filter.md
     - Probability Hypothesis Density: explanation/phd_filter.md
     - State Transition Matrix: explanation/stm.md
+
