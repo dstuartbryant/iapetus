@@ -1,7 +1,20 @@
 site_name: Iapetus
 
 theme:
-  name: "material"
+  name: material
+
+  palette:
+  # Palette toggle for light mode
+    - scheme: default
+      toggle:
+        icon: material/brightness-7 
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
   features:
     # - navigation.indexes
     - navigation.tabs
@@ -28,9 +41,17 @@ markdown_extensions:
   - pymdownx.superfences
 
 extra_javascript:
-  # - javascripts/mathjax.js   # Removing this line for 404 warn. Removal doesn't seem to be an issue.
+  - javascripts/bundle.af94fead.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/timeago.js/2.0.2/timeago.min.js
+  - javascripts/timeago_mkdocs_material.js
+  - javascripts/custom.0fa778a4.min.js
+  - javascripts/bundle.bec7f21d.min.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+extra_css:
+  - stylesheets/extra.2af97fc9.min.css
+
 
 nav:
   - index.md
