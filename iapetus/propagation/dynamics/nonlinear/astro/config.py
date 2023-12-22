@@ -80,6 +80,45 @@ class Astrodynamics(BaseModel):
 
         return sv_list
 
+    def _state_variable_abbreviations_map(self):
+        """Maps abbreviated state variable names to their longer/full length
+        versions.
+        """
+        return {
+            "position_i_m": "pi",
+            "position_j_m": "pj",
+            "position_k_m": "pk",
+            "velocity_i_mps": "vi",
+            "velocity_j_mps": "vj",
+            "velocity_k_mps": "vk",
+            "accelration_i_mps2": "ai",
+            "accelration_j_mps2": "aj",
+            "accelration_k_mps2": "ak",
+            "angle_1_rad": "t1",  # t for theta
+            "angle_2_rad": "t2",
+            "angle_3_rad": "t3",
+            "angle_rate_1_radps": "w1",  # w for omega
+            "angle_rate_2_radps": "w2",
+            "angle_rate_3_radps": "w3",
+            "angular_acceleration_1_radps2": "wdot1",
+            "angular_acceleration_2_radps2": "wdot2",
+            "angular_acceleration_3_radps2": "wdot3",
+            "Cd": "Cd",
+        }
+
+    def form_abbreviated_state_vector_list(self):
+        """Forms an abbreviated state vector list that aligns with attribute
+        naming in equations of motion (EOM) modules.
+
+        The intention is to reduce the abount of code by reducing the length of
+        variable names.
+        """
+        sv_list = self.form_state_vector_list()
+        a_sv_list = []
+        for item in sv_list:
+            a_sv_list.append(self.state_abbrv_map[item])
+        return a_sv_list
+
     def form_state_vector_derivative_list(self):
         sv_list = []
         if "translational" in self.state_vector:
@@ -105,11 +144,18 @@ class Astrodynamics(BaseModel):
 
         return sv_list
 
+    def form_abbreviated_state_vector_derivative_list(self):
+        d_list = self.form_state_vector_derivative_list()
+        a_d_list = []
+        for item in d_list:
+            a_d_list.append(self.state_abbrv_map[item])
+        return a_d_list
+
     def form_partial_derivatives_matrix_map(self):
         pdm_map_list = []
-        for idx, dvar in enumerate(self.state_vector_derivative_list):
-            for jdx, var in enumerate(self.state_vector_list):
-                pdm_map_list.append((dvar, var, idx, jdx))
+        for idx, dvar in enumerate(self.abbrv_state_vector_derivative_list):
+            for jdx, var in enumerate(self.abbrv_state_vector_list):
+                pdm_map_list.append((f"d{dvar}_d{var}", idx, jdx))
 
         return pdm_map_list
 
@@ -118,9 +164,21 @@ class Astrodynamics(BaseModel):
         return self.form_state_vector_list()
 
     @property
+    def state_abbrv_map(self):
+        return self._state_variable_abbreviations_map()
+
+    @property
     def state_vector_derivative_list(self):
         return self.form_state_vector_derivative_list()
 
     @property
     def partial_derivatives_map(self):
         return self.form_partial_derivatives_matrix_map()
+
+    @property
+    def abbrv_state_vector_list(self):
+        return self.form_abbreviated_state_vector_list()
+
+    @property
+    def abbrv_state_vector_derivative_list(self):
+        return self.form_abbreviated_state_vector_derivative_list()
