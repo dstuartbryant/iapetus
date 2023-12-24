@@ -30,7 +30,7 @@ class PreComputed:
 
 @dataclass
 class PerturbedOutput:
-    accelrations: AtmosphericDragAccelerations
+    accelerations: AtmosphericDragAccelerations
     partials: Optional[AtmosphericDragPartials] = None
 
 
@@ -85,7 +85,7 @@ class Perturbations:
         pc = self.pre_compute(pi, pj, vi, vj, vk, A, Cd, m)
         d = self.density_model(pi, pj, pk, p)
         output = PerturbedOutput(
-            accelrations=accelerations(
+            accelerations=accelerations(
                 pc.vreli,
                 pc.vrelj,
                 pc.vrelk,

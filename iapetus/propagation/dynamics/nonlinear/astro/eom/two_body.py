@@ -1,94 +1,122 @@
 """Two-body equations of motion module."""
 
+from dataclasses import dataclass
+from typing import Optional
 
+
+@dataclass
 class TwoBodyAccelerations:
-    """Computes accelerations under two-body motion."""
+    ai: float
+    aj: float
+    ak: float
 
-    def __init__(self, mu_m3ps2: float):
+
+@dataclass
+class TwoBodyPartials:
+    dvi_dpi: float = 0.0
+    dvi_dpj: float = 0.0
+    dvi_dpk: float = 0.0
+    dvi_dvi: float = 1.0
+    dvi_dvj: float = 0.0
+    dvi_dvk: float = 0.0
+    dvj_dpi: float = 0.0
+    dvj_dpj: float = 0.0
+    dvj_dpk: float = 0.0
+    dvj_dvi: float = 0.0
+    dvj_dvj: float = 1.0
+    dvj_dvk: float = 0.0
+    dvk_dpi: float = 0.0
+    dvk_dpj: float = 0.0
+    dvk_dpk: float = 0.0
+    dvk_dvi: float = 0.0
+    dvk_dvj: float = 0.0
+    dvk_dvk: float = 1.0
+    dai_dpi: float = 0.0
+    dai_dpj: float = 0.0
+    dai_dpk: float = 0.0
+    dai_dvi: float = 0.0
+    dai_dvj: float = 0.0
+    dai_dvk: float = 0.0
+    daj_dpi: float = 0.0
+    daj_dpj: float = 0.0
+    daj_dpk: float = 0.0
+    daj_dvi: float = 0.0
+    daj_dvj: float = 0.0
+    daj_dvk: float = 0.0
+    dak_dpi: float = 0.0
+    dak_dpj: float = 0.0
+    dak_dpk: float = 0.0
+    dak_dvi: float = 0.0
+    dak_dvj: float = 0.0
+    dak_dvk: float = 0.0
+
+
+@dataclass
+class TwoBodyOutput:
+    accelerations: TwoBodyAccelerations
+    partials: TwoBodyPartials
+
+
+class TwoBodyEomError(Exception):
+    pass
+
+
+class TwoBody:
+    """Two body equations of motion (EOM) class."""
+
+    def __init__(self, mu_m3ps2: float, partials_flag: bool):
         """
         Args:
             mu_m3ps2 (float): graviational constant in meters cubed per seconds
             squared [m3ps2]
+            partials_flag (bool): If True, computes and returns partial
+                derivatives
         """
         self.mu = mu_m3ps2
-        self.ai = 0
-        self.aj = 0
-        self.ak = 0
+        self.partials_flag = partials_flag
 
-    def _acceleration(self, p: float, r3: float) -> float:
-        return -self.mu * p / r3
+    def _acceleration(self, p_comp: float, p3: float) -> float:
+        return -self.mu * p_comp / p3
 
-    def compute(self, x: float, y: float, z: float, r3: float):
-        self.ai = self._acceleration(x, r3)
-        self.aj = self._acceleration(y, r3)
-        self.ak = self._acceleration(z, r3)
-
-
-class TwoBodyPartialDerivatives:
-    """Computes partial derivative elements under two-body motion."""
-
-    def __init__(self, mu_m3ps2: float):
-        """
-        Args:
-            mu_m3ps2 (float): graviational constant in meters cubed per seconds
-            squared [m3ps2]
-        """
-        self.mu = mu_m3ps2
-        self.dvi_dpi = 0.0
-        self.dvi_dpj = 0.0
-        self.dvi_dpk = 0.0
-        self.dvi_dvi = 1.0
-        self.dvi_dvj = 0.0
-        self.dvi_dvk = 0.0
-        self.dvj_dpi = 0.0
-        self.dvj_dpj = 0.0
-        self.dvj_dpk = 0.0
-        self.dvj_dvi = 0.0
-        self.dvj_dvj = 1.0
-        self.dvj_dvk = 0.0
-        self.dvk_dpi = 0.0
-        self.dvk_dpj = 0.0
-        self.dvk_dpk = 0.0
-        self.dvk_dvi = 0.0
-        self.dvk_dvj = 0.0
-        self.dvk_dvk = 1.0
-        self.dai_dpi = 0.0
-        self.dai_dpj = 0.0
-        self.dai_dpk = 0.0
-        self.dai_dvi = 0.0
-        self.dai_dvj = 0.0
-        self.dai_dvk = 0.0
-        self.daj_dpi = 0.0
-        self.daj_dpj = 0.0
-        self.daj_dpk = 0.0
-        self.daj_dvi = 0.0
-        self.daj_dvj = 0.0
-        self.daj_dvk = 0.0
-        self.dak_dpi = 0.0
-        self.dak_dpj = 0.0
-        self.dak_dpk = 0.0
-        self.dak_dvi = 0.0
-        self.dak_dvj = 0.0
-        self.dak_dvk = 0.0
-
-    def _da_dp_same_components(self, p: float, r3: float, r5: float) -> float:
-        return 3 * p**2 * self.mu / r5 - self.mu / r3
+    def _da_dp_same_components(
+        self, p_comp: float, p3: float, p5: float
+    ) -> float:
+        return 3 * p_comp**2 * self.mu / p5 - self.mu / p3
 
     def _da_dp_different_components(
-        self, p1: float, p2: float, r5: float
+        self, p_comp_1: float, p_comp_2: float, p5: float
     ) -> float:
-        return 3 * p1 * p2 * self.mu / r5
+        return 3 * p_comp_1 * p_comp_2 * self.mu / p5
 
-    def compute(self, x: float, y: float, z: float, r3: float, r5: float):
-        self.dai_dpi = self._da_dp_same_components(x, r3, r5)
-        self.daj_dpj = self._da_dp_same_components(y, r3, r5)
-        self.dak_dpk = self._da_dp_same_components(z, r3, r5)
+    def __call__(
+        self, pi: float, pj: float, pk: float, p3: float, p5: Optional[float]
+    ) -> TwoBodyOutput:
+        output = TwoBodyOutput(
+            accelerations=TwoBodyAccelerations(
+                self._acceleration(pi, p3),
+                self._acceleration(pj, p3),
+                self._acceleration(pk, p3),
+            )
+        )
+        if self.partials_flag:
+            dai_dpj = self._da_dp_different_components(pi, pj, p5)
+            daj_dpi = dai_dpj
+            daj_dpk = self._da_dp_different_components(pj, pk, p5)
+            dak_dpj = daj_dpk
+            dai_dpk = self._da_dp_different_components(pi, pk, p5)
+            dak_dpi = dai_dpk
 
-        self.dai_dpj = self._da_dp_different_components(x, y, r5)
-        self.daj_dpi = self.dai_dpj
-
-        self.daj_dpk = self._da_dp_different_components(y, z, r5)
-        self.dak_dpj = self.daj_dpk
-
-        self.dai_dpk = self._da_dp_different_components(x, z, r5)
-        self.dak_dpi = self.dai_dpk
+            if not p5:
+                raise TwoBodyEomError(
+                    "`p5` arg (satellite radius to fifth power) is required "
+                    "for partial derivative calculations."
+                )
+            output.partials.dai_dpi = self._da_dp_same_components(pi, p3, p5)
+            output.partials.daj_dpj = self._da_dp_same_components(pj, p3, p5)
+            output.partials.dak_dpk = self._da_dp_same_components(pk, p3, p5)
+            output.partials.dai_dpj = dai_dpj
+            output.partials.daj_dpi = daj_dpi
+            output.partials.daj_dpk = daj_dpk
+            output.partials.dak_dpj = dak_dpj
+            output.partials.dai_dpk = dai_dpk
+            output.partials.dak_dpi = dak_dpi
