@@ -8,6 +8,7 @@ import numpy as np
 
 from iapetus.propagation.dynamics.nonlinear.astro.constants import ROTATION
 
+from ...payloads import AtmosphericDragInitConfig, TwoBodyDragState
 from .accelerations import AtmosphericDragAccelerations, accelerations
 from .atmospheric_density import ExponentialAtmosphericModel
 from .derivatives import AtmosphericDragPartials, partials
@@ -17,7 +18,6 @@ OMEGA_EARTH = ROTATION["Earth"]
 
 @dataclass
 class PreComputed:
-    Bstar: float
     vreli: float
     vrelj: float
     vrelk: float
@@ -41,49 +41,22 @@ class Perturbations:
     drag dynamics.
     """
 
-    def __init__(
-        self,
-        partials_flag: bool,
-        Bstar_flag: bool,
-    ):
+    def __init__(self, c: AtmosphericDragInitConfig):
         self.w = OMEGA_EARTH
-        self.partials_flag = partials_flag
-        self.Bstar_flag = Bstar_flag
-        self.density_model = ExponentialAtmosphericModel(partials_flag)
+        self.partials_flag = c.partials_flag
+        self.Bstar_flag = c.Bstar_flag
+        self.density_model = ExponentialAtmosphericModel(c.partials_flag)
 
-    def pre_compute(
-        self,
-        pi: float,
-        pj: float,
-        vi: float,
-        vj: float,
-        vk: float,
-        A: float,
-        Cd: float,
-        m: float,
-    ):
+    def pre_compute(self, s: TwoBodyDragState):
         return PreComputed(
-            Bstar=0.5 * A * Cd / m,
-            vreli=vi + self.w * pj,
-            vrelj=vj - self.w * pi,
-            vrelk=vk,
+            vreli=s.vi + self.w * s.pj,
+            vrelj=s.vj - self.w * s.pi,
+            vrelk=s.vk,
         )
 
-    def __call__(
-        self,
-        pi: float,
-        pj: float,
-        pk: float,
-        p: float,
-        vi: float,
-        vj: float,
-        vk: float,
-        A: float,
-        Cd: float,
-        m: float,
-    ) -> PerturbedOutput:
-        pc = self.pre_compute(pi, pj, vi, vj, vk, A, Cd, m)
-        d = self.density_model(pi, pj, pk, p)
+    def __call__(self, s: TwoBodyDragState) -> PerturbedOutput:
+        pc = self.pre_compute(s)
+        d = self.density_model(s.pi, s.pj, s.pk, s.p)
         output = PerturbedOutput(
             accelerations=accelerations(
                 pc.vreli,
@@ -91,7 +64,7 @@ class Perturbations:
                 pc.vrelk,
                 pc.vrel,
                 d.rho,
-                pc.Bstar,
+                s.Bstar,
             )
         )
         if self.partials_flag:
@@ -101,7 +74,7 @@ class Perturbations:
                 pc.vrelk,
                 pc.vrel,
                 d.rho,
-                pc.Bstar,
+                s.Bstar,
                 d.partials.drho_dpi,
                 d.partials.drho_dpj,
                 d.partials.drho_dpk,

@@ -1,11 +1,11 @@
 """Astrodynamics (dynamics) configuration interface module."""
 
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, root_validator, validator
 
 UI_STATE_VECTOR_OPTIONS = ["translational", "rotational", "Cd"]
-DYNAMICS_MODELS = ["two-body", "non-spherical", "atmospheric-drag"]
+PERTURBATION_MODELS = ["non-spherical", "atmospheric-drag"]
 
 
 class AstrodynamicsConfigError(Exception):
@@ -16,7 +16,7 @@ class Astrodynamics(BaseModel):
     """Astrodynamics user interface configuration model."""
 
     state_vector: List[str]
-    dynamics: List[str] = ["two-body"]
+    perturbations: Optional[List[str]] = []
 
     @validator("state_vector")
     def check_state_vector_input(cls, value):
@@ -33,25 +33,23 @@ class Astrodynamics(BaseModel):
 
         return value
 
-    @validator("dynamics")
-    def check_dynamics_input(cls, value):
-        if not all([v in DYNAMICS_MODELS for v in value]):
+    @validator("perturbations")
+    def check_perturbations_input(cls, value):
+        if not all([v in PERTURBATION_MODELS for v in value]):
             raise AstrodynamicsConfigError(
-                "Found unexpected dynamics model input."
+                "Found unexpected perturbations model input."
             )
-        if "two-body" not in value:
-            value = ["two-body"] + value
         return value
 
     @root_validator
-    def cross_check_state_vector_and_dynamics_input(cls, values):
+    def cross_check_state_vector_and_perturbations_input(cls, values):
         if (
             "Cd" in values["state_vector"]
-            and "atmospheric-drag" not in values["dynamics"]
+            and "atmospheric-drag" not in values["perturbations"]
         ):
             raise AstrodynamicsConfigError(
-                "Cd cannot be in state vector if atmospheric dynamics are not"
-                " used."
+                "Cd cannot be in state vector if atmospheric perturbations are"
+                " not used."
             )
         return values
 
@@ -104,6 +102,7 @@ class Astrodynamics(BaseModel):
             "angular_acceleration_2_radps2": "wdot2",
             "angular_acceleration_3_radps2": "wdot3",
             "Cd": "Cd",
+            "Cd_rate": "Cd_rate",
         }
 
     def form_abbreviated_state_vector_list(self):

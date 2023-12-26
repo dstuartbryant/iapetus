@@ -1,91 +1,81 @@
 """Two body EOM test module."""
 
-import numpy as np
 import pytest
 
-from iapetus.propagation.dynamics.nonlinear.astro.constants import (
-    EQUATORIAL_RADIUS,
-    MU,
+from iapetus.propagation.dynamics.nonlinear.astro.eom.payloads import (
+    TwoBodyInitConfig,
 )
-from iapetus.propagation.dynamics.nonlinear.astro.eom.two_body import (
-    TwoBodyAccelerations,
-    TwoBodyPartialDerivatives,
-)
-
-MU_EARTH = MU["Earth"]
-R_EARTH = EQUATORIAL_RADIUS
+from iapetus.propagation.dynamics.nonlinear.astro.eom.two_body import TwoBody
 
 
-def test_accelerations():
-    # Position vector
-    p = [6656356.11057065, 1700859.15707779, 299734.38071253]
-    r = np.linalg.norm(p)
-    r3 = r**3
-    tba = TwoBodyAccelerations(MU_EARTH)
-    tba.compute(p[0], p[1], p[2], r3)
-    assert tba.ai == -MU_EARTH * p[0] / r3
-    assert tba.aj == -MU_EARTH * p[1] / r3
-    assert tba.ak == -MU_EARTH * p[2] / r3
+def test_accelerations(sat_state_1, earth_params):
+    ss1 = sat_state_1
+    tbic = TwoBodyInitConfig(mu=earth_params.mu, partials_flag=False)
+    mu = earth_params.mu
+    tba = TwoBody(tbic)
+    output = tba(ss1)
+    assert output.accelerations.ai == -mu * ss1.pi / ss1.p3
+    assert output.accelerations.aj == -mu * ss1.pj / ss1.p3
+    assert output.accelerations.ak == -mu * ss1.pk / ss1.p3
 
 
-def test_partial_derivatives():
-    p = [6656356.11057065, 1700859.15707779, 299734.38071253]
-    r = np.linalg.norm(p)
-    r3 = r**3
-    r5 = r**5
-    tbpd = TwoBodyPartialDerivatives(MU_EARTH)
-    tbpd.compute(p[0], p[1], p[2], r3, r5)
-    assert tbpd.dvi_dpi == 0.0
-    assert tbpd.dvi_dpj == 0.0
-    assert tbpd.dvi_dpk == 0.0
-    assert tbpd.dvi_dvi == 1.0
-    assert tbpd.dvi_dvj == 0.0
-    assert tbpd.dvi_dvk == 0.0
-    assert tbpd.dvj_dpi == 0.0
-    assert tbpd.dvj_dpj == 0.0
-    assert tbpd.dvj_dpk == 0.0
-    assert tbpd.dvj_dvi == 0.0
-    assert tbpd.dvj_dvj == 1.0
-    assert tbpd.dvj_dvk == 0.0
-    assert tbpd.dvk_dpi == 0.0
-    assert tbpd.dvk_dpj == 0.0
-    assert tbpd.dvk_dpk == 0.0
-    assert tbpd.dvk_dvi == 0.0
-    assert tbpd.dvk_dvj == 0.0
-    assert tbpd.dvk_dvk == 1.0
-    assert tbpd.dai_dpi == pytest.approx(
-        -MU_EARTH / r3 + 3 * MU_EARTH * p[0] ** 2 / r5, abs=1e-21
+def test_partial_derivatives(sat_state_1, earth_params):
+    ss1 = sat_state_1
+    mu = earth_params.mu
+    tbic = TwoBodyInitConfig(mu=earth_params.mu, partials_flag=True)
+    tbpd = TwoBody(tbic)
+    output = tbpd(ss1)
+    assert output.partials.dvi_dpi == 0.0
+    assert output.partials.dvi_dpj == 0.0
+    assert output.partials.dvi_dpk == 0.0
+    assert output.partials.dvi_dvi == 1.0
+    assert output.partials.dvi_dvj == 0.0
+    assert output.partials.dvi_dvk == 0.0
+    assert output.partials.dvj_dpi == 0.0
+    assert output.partials.dvj_dpj == 0.0
+    assert output.partials.dvj_dpk == 0.0
+    assert output.partials.dvj_dvi == 0.0
+    assert output.partials.dvj_dvj == 1.0
+    assert output.partials.dvj_dvk == 0.0
+    assert output.partials.dvk_dpi == 0.0
+    assert output.partials.dvk_dpj == 0.0
+    assert output.partials.dvk_dpk == 0.0
+    assert output.partials.dvk_dvi == 0.0
+    assert output.partials.dvk_dvj == 0.0
+    assert output.partials.dvk_dvk == 1.0
+    assert output.partials.dai_dpi == pytest.approx(
+        -mu / ss1.p3 + 3 * mu * ss1.pi**2 / ss1.p5, abs=1e-21
     )
-    assert tbpd.dai_dpj == pytest.approx(
-        3 * MU_EARTH * p[0] * p[1] / r5, abs=1e-21
+    assert output.partials.dai_dpj == pytest.approx(
+        3 * mu * ss1.pi * ss1.pj / ss1.p5, abs=1e-21
     )
-    assert tbpd.dai_dpk == pytest.approx(
-        3 * MU_EARTH * p[0] * p[2] / r5, abs=1e-21
+    assert output.partials.dai_dpk == pytest.approx(
+        3 * mu * ss1.pi * ss1.pk / ss1.p5, abs=1e-21
     )
-    assert tbpd.dai_dvi == 0.0
-    assert tbpd.dai_dvj == 0.0
-    assert tbpd.dai_dvk == 0.0
-    assert tbpd.daj_dpi == pytest.approx(
-        3 * MU_EARTH * p[0] * p[1] / r5, abs=1e-21
+    assert output.partials.dai_dvi == 0.0
+    assert output.partials.dai_dvj == 0.0
+    assert output.partials.dai_dvk == 0.0
+    assert output.partials.daj_dpi == pytest.approx(
+        3 * mu * ss1.pi * ss1.pj / ss1.p5, abs=1e-21
     )
-    assert tbpd.daj_dpj == pytest.approx(
-        -MU_EARTH / r3 + 3 * MU_EARTH * p[1] ** 2 / r5, abs=1e-21
+    assert output.partials.daj_dpj == pytest.approx(
+        -mu / ss1.p3 + 3 * mu * ss1.pj**2 / ss1.p5, abs=1e-21
     )
-    assert tbpd.daj_dpk == pytest.approx(
-        3 * MU_EARTH * p[1] * p[2] / r5, abs=1e-21
+    assert output.partials.daj_dpk == pytest.approx(
+        3 * mu * ss1.pj * ss1.pk / ss1.p5, abs=1e-21
     )
-    assert tbpd.daj_dvi == 0.0
-    assert tbpd.daj_dvj == 0.0
-    assert tbpd.daj_dvk == 0.0
-    assert tbpd.dak_dpi == pytest.approx(
-        3 * MU_EARTH * p[0] * p[2] / r5, abs=1e-21
+    assert output.partials.daj_dvi == 0.0
+    assert output.partials.daj_dvj == 0.0
+    assert output.partials.daj_dvk == 0.0
+    assert output.partials.dak_dpi == pytest.approx(
+        3 * mu * ss1.pi * ss1.pk / ss1.p5, abs=1e-21
     )
-    assert tbpd.dak_dpj == pytest.approx(
-        3 * MU_EARTH * p[1] * p[2] / r5, abs=1e-21
+    assert output.partials.dak_dpj == pytest.approx(
+        3 * mu * ss1.pj * ss1.pk / ss1.p5, abs=1e-21
     )
-    assert tbpd.dak_dpk == pytest.approx(
-        -MU_EARTH / r3 + 3 * MU_EARTH * p[2] ** 2 / r5, abs=1e-21
+    assert output.partials.dak_dpk == pytest.approx(
+        -mu / ss1.p3 + 3 * mu * ss1.pk**2 / ss1.p5, abs=1e-21
     )
-    assert tbpd.dak_dvi == 0.0
-    assert tbpd.dak_dvj == 0.0
-    assert tbpd.dak_dvk == 0.0
+    assert output.partials.dak_dvi == 0.0
+    assert output.partials.dak_dvj == 0.0
+    assert output.partials.dak_dvk == 0.0

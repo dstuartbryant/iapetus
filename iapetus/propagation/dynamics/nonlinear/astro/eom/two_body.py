@@ -3,6 +3,9 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from .payloads.call_states import TwoBodyState
+from .payloads.configs import TwoBodyInitConfig
+
 
 @dataclass
 class TwoBodyAccelerations:
@@ -54,7 +57,7 @@ class TwoBodyPartials:
 @dataclass
 class TwoBodyOutput:
     accelerations: TwoBodyAccelerations
-    partials: TwoBodyPartials
+    partials: Optional[TwoBodyPartials] = None
 
 
 class TwoBodyEomError(Exception):
@@ -64,7 +67,7 @@ class TwoBodyEomError(Exception):
 class TwoBody:
     """Two body equations of motion (EOM) class."""
 
-    def __init__(self, mu_m3ps2: float, partials_flag: bool):
+    def __init__(self, c: TwoBodyInitConfig):
         """
         Args:
             mu_m3ps2 (float): graviational constant in meters cubed per seconds
@@ -72,8 +75,8 @@ class TwoBody:
             partials_flag (bool): If True, computes and returns partial
                 derivatives
         """
-        self.mu = mu_m3ps2
-        self.partials_flag = partials_flag
+        self.mu = c.mu
+        self.partials_flag = c.partials_flag
 
     def _acceleration(self, p_comp: float, p3: float) -> float:
         return -self.mu * p_comp / p3
@@ -88,35 +91,34 @@ class TwoBody:
     ) -> float:
         return 3 * p_comp_1 * p_comp_2 * self.mu / p5
 
-    def __call__(
-        self, pi: float, pj: float, pk: float, p3: float, p5: Optional[float]
-    ) -> TwoBodyOutput:
+    def __call__(self, s: TwoBodyState) -> TwoBodyOutput:
         output = TwoBodyOutput(
             accelerations=TwoBodyAccelerations(
-                self._acceleration(pi, p3),
-                self._acceleration(pj, p3),
-                self._acceleration(pk, p3),
+                self._acceleration(s.pi, s.p3),
+                self._acceleration(s.pj, s.p3),
+                self._acceleration(s.pk, s.p3),
             )
         )
         if self.partials_flag:
-            dai_dpj = self._da_dp_different_components(pi, pj, p5)
-            daj_dpi = dai_dpj
-            daj_dpk = self._da_dp_different_components(pj, pk, p5)
-            dak_dpj = daj_dpk
-            dai_dpk = self._da_dp_different_components(pi, pk, p5)
-            dak_dpi = dai_dpk
-
-            if not p5:
+            if not s.p5:
                 raise TwoBodyEomError(
                     "`p5` arg (satellite radius to fifth power) is required "
                     "for partial derivative calculations."
                 )
-            output.partials.dai_dpi = self._da_dp_same_components(pi, p3, p5)
-            output.partials.daj_dpj = self._da_dp_same_components(pj, p3, p5)
-            output.partials.dak_dpk = self._da_dp_same_components(pk, p3, p5)
-            output.partials.dai_dpj = dai_dpj
-            output.partials.daj_dpi = daj_dpi
-            output.partials.daj_dpk = daj_dpk
-            output.partials.dak_dpj = dak_dpj
-            output.partials.dai_dpk = dai_dpk
-            output.partials.dak_dpi = dak_dpi
+            dai_dpj = self._da_dp_different_components(s.pi, s.pj, s.p5)
+            daj_dpk = self._da_dp_different_components(s.pj, s.pk, s.p5)
+            dai_dpk = self._da_dp_different_components(s.pi, s.pk, s.p5)
+            parts = TwoBodyPartials(
+                dai_dpi=self._da_dp_same_components(s.pi, s.p3, s.p5),
+                daj_dpj=self._da_dp_same_components(s.pj, s.p3, s.p5),
+                dak_dpk=self._da_dp_same_components(s.pk, s.p3, s.p5),
+                dai_dpj=dai_dpj,
+                daj_dpi=dai_dpj,
+                daj_dpk=daj_dpk,
+                dak_dpj=daj_dpk,
+                dai_dpk=dai_dpk,
+                dak_dpi=dai_dpk,
+            )
+            output.partials = parts
+
+        return output

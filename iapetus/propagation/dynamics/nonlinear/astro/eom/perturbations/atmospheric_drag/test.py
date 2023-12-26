@@ -3,6 +3,10 @@
 
 import numpy as np
 
+from iapetus.propagation.dynamics.nonlinear.astro.eom.payloads import (
+    AtmosphericDragInitConfig,
+)
+
 from . import ExponentialAtmosphericModel, Perturbations
 
 
@@ -10,32 +14,21 @@ def test_accelerations(sat_state_1, earth_params):
     ss1 = sat_state_1
     ep = earth_params
     w = ep.rotation_rate
-    Bstar = 0.5 * ss1.Cd * ss1.area / ss1.mass
     density_model = ExponentialAtmosphericModel(partials_flag=False)
-    rho = density_model(ss1.pi, ss1.pj, ss1.pk, ss1.p_mag).rho
+    rho = density_model(ss1.pi, ss1.pj, ss1.pk, ss1.p).rho
 
-    pert = Perturbations(partials_flag=False, Bstar_flag=False)
-    pout = pert(
-        ss1.pi,
-        ss1.pj,
-        ss1.pk,
-        ss1.p_mag,
-        ss1.vi,
-        ss1.vj,
-        ss1.vk,
-        ss1.area,
-        ss1.Cd,
-        ss1.mass,
-    )
+    adic = AtmosphericDragInitConfig(partials_flag=False, Bstar_flag=False)
+    pert = Perturbations(adic)
+    pout = pert(ss1)
 
     vreli = ss1.vi + w * ss1.pj
     vrelj = ss1.vj - w * ss1.pi
     vrelk = ss1.vk
     vrel = np.linalg.norm([vreli, vrelj, vrelk])
 
-    ai = -Bstar * rho * vrel * vreli
-    aj = -Bstar * rho * vrel * vrelj
-    ak = -Bstar * rho * vrel * vrelk
+    ai = -ss1.Bstar * rho * vrel * vreli
+    aj = -ss1.Bstar * rho * vrel * vrelj
+    ak = -ss1.Bstar * rho * vrel * vrelk
 
     assert ai == pout.accelerations.ai
     assert aj == pout.accelerations.aj
@@ -46,60 +39,54 @@ def test_partials_no_Bstar(sat_state_1, earth_params):
     ss1 = sat_state_1
     ep = earth_params
     w = ep.rotation_rate
-    Bstar = 0.5 * ss1.Cd * ss1.area / ss1.mass
     density_model = ExponentialAtmosphericModel(partials_flag=True)
-    d = density_model(ss1.pi, ss1.pj, ss1.pk, ss1.p_mag)
+    d = density_model(ss1.pi, ss1.pj, ss1.pk, ss1.p)
     rho = d.rho
     drho_dpi = d.partials.drho_dpi
     drho_dpj = d.partials.drho_dpj
     drho_dpk = d.partials.drho_dpk
-
-    pert = Perturbations(partials_flag=True, Bstar_flag=False)
-    pout = pert(
-        ss1.pi,
-        ss1.pj,
-        ss1.pk,
-        ss1.p_mag,
-        ss1.vi,
-        ss1.vj,
-        ss1.vk,
-        ss1.area,
-        ss1.Cd,
-        ss1.mass,
-    )
+    adic = AtmosphericDragInitConfig(partials_flag=True, Bstar_flag=False)
+    pert = Perturbations(adic)
+    pout = pert(ss1)
 
     vreli = ss1.vi + w * ss1.pj
     vrelj = ss1.vj - w * ss1.pi
     vrelk = ss1.vk
     vrel = np.linalg.norm([vreli, vrelj, vrelk])
 
-    assert pout.partials.dai_dpi == -Bstar * vreli * (
+    assert pout.partials.dai_dpi == -ss1.Bstar * vreli * (
         drho_dpi * vrel - w * rho * vrelj / vrel
     )
-    assert pout.partials.dai_dpj == -Bstar * (
+    assert pout.partials.dai_dpj == -ss1.Bstar * (
         drho_dpj * vrel * vreli + w * rho * (vreli**2 / vrel + vrel)
     )
-    assert pout.partials.dai_dpk == -Bstar * drho_dpk * vrel * vreli
-    assert pout.partials.dai_dvi == -Bstar * rho * (vreli**2 / vrel + vrel)
-    assert pout.partials.dai_dvj == -Bstar * rho * vreli * vrelj / vrel
-    assert pout.partials.dai_dvk == -Bstar * rho * vreli * vrelk / vrel
-    assert pout.partials.daj_dpi == -Bstar * (
+    assert pout.partials.dai_dpk == -ss1.Bstar * drho_dpk * vrel * vreli
+    assert pout.partials.dai_dvi == -ss1.Bstar * rho * (
+        vreli**2 / vrel + vrel
+    )
+    assert pout.partials.dai_dvj == -ss1.Bstar * rho * vreli * vrelj / vrel
+    assert pout.partials.dai_dvk == -ss1.Bstar * rho * vreli * vrelk / vrel
+    assert pout.partials.daj_dpi == -ss1.Bstar * (
         drho_dpi * vrel * vrelj - w * rho * (vrelj**2 / vrel + vrel)
     )
-    assert pout.partials.daj_dpj == -Bstar * vrelj * (
+    assert pout.partials.daj_dpj == -ss1.Bstar * vrelj * (
         drho_dpj * vrel + w * rho * vreli / vrel
     )
-    assert pout.partials.daj_dpk == -Bstar * drho_dpk * vrel * vrelj
-    assert pout.partials.daj_dvi == -Bstar * rho * vreli * vrelj / vrel
-    assert pout.partials.daj_dvj == -Bstar * rho * (vrelj**2 / vrel + vrel)
-    assert pout.partials.daj_dvk == -Bstar * rho * vrelj * vrelk / vrel
-    assert pout.partials.dak_dpi == -Bstar * vrelk * (
+    assert pout.partials.daj_dpk == -ss1.Bstar * drho_dpk * vrel * vrelj
+    assert pout.partials.daj_dvi == -ss1.Bstar * rho * vreli * vrelj / vrel
+    assert pout.partials.daj_dvj == -ss1.Bstar * rho * (
+        vrelj**2 / vrel + vrel
+    )
+    assert pout.partials.daj_dvk == -ss1.Bstar * rho * vrelj * vrelk / vrel
+    assert pout.partials.dak_dpi == -ss1.Bstar * vrelk * (
         drho_dpi * vrel - w * rho * vrelj / vrel
     )
-    assert pout.partials.dak_dpj == -Bstar * vrelk * (
+    assert pout.partials.dak_dpj == -ss1.Bstar * vrelk * (
         drho_dpj * vrel + w * rho * vreli / vrel
     )
-    assert pout.partials.dak_dpk == -Bstar * drho_dpk * vrel * vrelk
-    assert pout.partials.dak_dvi == -Bstar * rho * vreli * vrelk / vrel
-    assert pout.partials.dak_dvj == -Bstar * rho * vrelj * vrelk / vrel
-    assert pout.partials.dak_dvk == -Bstar * rho * (vrelk**2 / vrel + vrel)
+    assert pout.partials.dak_dpk == -ss1.Bstar * drho_dpk * vrel * vrelk
+    assert pout.partials.dak_dvi == -ss1.Bstar * rho * vreli * vrelk / vrel
+    assert pout.partials.dak_dvj == -ss1.Bstar * rho * vrelj * vrelk / vrel
+    assert pout.partials.dak_dvk == -ss1.Bstar * rho * (
+        vrelk**2 / vrel + vrel
+    )
