@@ -2,16 +2,19 @@
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
 from iapetus.propagation.dynamics.nonlinear.astro.constants import ROTATION
 
 from ...payloads import AtmosphericDragInitConfig, TwoBodyDragState
-from .accelerations import AtmosphericDragAccelerations, accelerations
+from ..models import AtmosphericDragPerturbedOutput, Perturbation
+from .accelerations import accelerations
 from .atmospheric_density import ExponentialAtmosphericModel
-from .derivatives import AtmosphericDragPartials, partials
+from .derivatives import partials
+
+# from typing import Optional
+
 
 OMEGA_EARTH = ROTATION["Earth"]
 
@@ -28,13 +31,7 @@ class PreComputed:
             self.vrel = np.linalg.norm([self.vreli, self.vrelj, self.vrelk])
 
 
-@dataclass
-class PerturbedOutput:
-    accelerations: AtmosphericDragAccelerations
-    partials: Optional[AtmosphericDragPartials] = None
-
-
-class Perturbations:
+class AtmosphericPerturbation(Perturbation):
     """Atmospheric drag perturbations class.
 
     Handles acceleration and partial derivative computations for atmospheric
@@ -54,10 +51,10 @@ class Perturbations:
             vrelk=s.vk,
         )
 
-    def __call__(self, s: TwoBodyDragState) -> PerturbedOutput:
+    def __call__(self, s: TwoBodyDragState) -> AtmosphericDragPerturbedOutput:
         pc = self.pre_compute(s)
         d = self.density_model(s.pi, s.pj, s.pk, s.p)
-        output = PerturbedOutput(
+        output = AtmosphericDragPerturbedOutput(
             accelerations=accelerations(
                 pc.vreli,
                 pc.vrelj,

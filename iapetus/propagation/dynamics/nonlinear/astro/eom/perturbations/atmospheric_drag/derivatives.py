@@ -1,35 +1,11 @@
 """Atmospheric drag partial derivatives for equations of motion (EOM)."""
-from dataclasses import dataclass
-from typing import Optional
+
 
 from iapetus.propagation.dynamics.nonlinear.astro.constants import ROTATION
 
+from ..models import AtmosphericDragPartials
+
 OMEGA_EARTH = ROTATION["Earth"]
-
-
-@dataclass
-class AtmosphericDragPartials:
-    dai_dpi: float
-    dai_dpj: float
-    dai_dpk: float
-    dai_dvi: float
-    dai_dvj: float
-    dai_dvk: float
-    daj_dpi: float
-    daj_dpj: float
-    daj_dpk: float
-    daj_dvi: float
-    daj_dvj: float
-    daj_dvk: float
-    dak_dpi: float
-    dak_dpj: float
-    dak_dpk: float
-    dak_dvi: float
-    dak_dvj: float
-    dak_dvk: float
-    dai_dBstar: Optional[float] = None
-    daj_dBstar: Optional[float] = None
-    dak_dBstar: Optional[float] = None
 
 
 def partials(

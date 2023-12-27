@@ -7,7 +7,7 @@ from iapetus.propagation.dynamics.nonlinear.astro.eom.payloads import (
     AtmosphericDragInitConfig,
 )
 
-from . import ExponentialAtmosphericModel, Perturbations
+from . import AtmosphericPerturbation, ExponentialAtmosphericModel
 
 
 def test_accelerations(sat_state_1, earth_params):
@@ -18,7 +18,7 @@ def test_accelerations(sat_state_1, earth_params):
     rho = density_model(ss1.pi, ss1.pj, ss1.pk, ss1.p).rho
 
     adic = AtmosphericDragInitConfig(partials_flag=False, Bstar_flag=False)
-    pert = Perturbations(adic)
+    pert = AtmosphericPerturbation(adic)
     pout = pert(ss1)
 
     vreli = ss1.vi + w * ss1.pj
@@ -46,7 +46,7 @@ def test_partials_no_Bstar(sat_state_1, earth_params):
     drho_dpj = d.partials.drho_dpj
     drho_dpk = d.partials.drho_dpk
     adic = AtmosphericDragInitConfig(partials_flag=True, Bstar_flag=False)
-    pert = Perturbations(adic)
+    pert = AtmosphericPerturbation(adic)
     pout = pert(ss1)
 
     vreli = ss1.vi + w * ss1.pj

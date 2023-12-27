@@ -1,13 +1,7 @@
 """Atmospheric drag accelerations for equations of motion (EOM)."""
 
-from dataclasses import dataclass
 
-
-@dataclass
-class AtmosphericDragAccelerations:
-    ai: float
-    aj: float
-    ak: float
+from ..models import PerturbedAccelerations
 
 
 def accelerations(
@@ -17,7 +11,7 @@ def accelerations(
     vrel: float,
     rho: float,
     Bstar: float,
-) -> AtmosphericDragAccelerations:
+) -> PerturbedAccelerations:
     """Computes component-specified acceleration following the drag force
     model.
 
@@ -35,4 +29,4 @@ def accelerations(
     aj = prefix * vrelj
     ak = prefix * vrelk
 
-    return AtmosphericDragAccelerations(ai, aj, ak)
+    return PerturbedAccelerations(ai, aj, ak)
