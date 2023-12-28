@@ -3,9 +3,13 @@
 from typing import List, Union
 
 from .payloads.call_states import TwoBodyDragState, TwoBodyState
-from .payloads.ui import PERTURBATION_NAMES, ui_seclector
+from .payloads.ui import configure_eom_from_user_config
 from .perturbations.models import Perturbation, PerturbedOutput
 from .two_body import TwoBody
+
+
+class EomError(Exception):
+    pass
 
 
 def partials_wrapper(name: str, pert_output: PerturbedOutput):
@@ -46,10 +50,21 @@ class Eom:
             return val
 
         def partials_getter(name: str):
-            val = partials_wrapper(name, two_body_output.partials)
-            for p in perturbations_output:
-                val += partials_wrapper(name, p.partials)
-            return val
+            try:
+                val = partials_wrapper(name, two_body_output.partials)
+                for p in perturbations_output:
+                    val += partials_wrapper(name, p.partials)
+                return val
+            except TypeError as e:
+                if (
+                    str(e.args[0])
+                    == "unsupported operand type(s) for +=: 'int' and "
+                    "'NoneType'"
+                ):
+                    raise EomError(
+                        f"Partials component {name}: Attempting to add to "
+                        "NoneType"
+                    )
 
         return accelerations_getter, partials_getter
 
@@ -64,4 +79,7 @@ def configure(user_config: dict, perturbations: List[str]) -> Eom:
         perturbations (List[str]): List of perturbations to use, if any. Can be
             an empty list.
     """
-    uio = ui_seclector(perturbations)
+    two_body_eom, pert_eom = configure_eom_from_user_config(
+        user_config, perturbations
+    )
+    return Eom(eom_two_body=two_body_eom, eom_perturbations=pert_eom)

@@ -10,11 +10,22 @@ Perturbations Options:
 * ...
 
 """
+from dataclasses import fields
 from typing import List
 
 from pydantic import BaseModel
 
-from .configs import AtmosphericDragInitConfig, TwoBodyInitConfig
+from ..perturbations import AtmosphericPerturbation
+from ..two_body import TwoBody as TwoBodyEom
+from .configs import (
+    AtmosphericDragInitConfig,
+    ErpInitConfig,
+    GeneralRelativityInitConfig,
+    NonSphericalInitConfig,
+    SrpInitConfig,
+    ThirdBodyInitConfig,
+    TwoBodyInitConfig,
+)
 
 PERTURBATION_NAMES = [
     "non-spherical",
@@ -26,6 +37,12 @@ PERTURBATION_NAMES = [
 ]
 
 
+def classFromArgs(className, argDict):
+    fieldSet = {f.name for f in fields(className) if f.init}
+    filteredArgDict = {k: v for k, v in argDict.items() if k in fieldSet}
+    return className(**filteredArgDict)
+
+
 class EomUiError(Exception):
     pass
 
@@ -33,24 +50,6 @@ class EomUiError(Exception):
 class TwoBody(BaseModel):
     mu: float
     partials_flag: bool
-
-    @property
-    def two_body_init_config(self):
-        return TwoBodyInitConfig(mu=self.mu, partials_flag=self.partials_flag)
-
-
-class TwoBodyWithPerts(TwoBody):
-    def _get_perturbations_init_config_names(self):
-        names = []
-        for a in dir(self):
-            if a != "two_body_init_config" and "_init_config" in a:
-                names.append(a)
-        return names
-
-    @property
-    def perturbations_init_configs(self):
-        pert_names = self._get_perturbations_init_config_names()
-        # No, I don't think this is best approach for this, can do better.
 
 
 class TwoBodyNonSphere(TwoBody):
@@ -151,6 +150,24 @@ ui_map = [
     },
 ]
 
+individual_init_config_map = {
+    "non-spherical": NonSphericalInitConfig,
+    "third-body": ThirdBodyInitConfig,
+    "general-relativity": GeneralRelativityInitConfig,
+    "atmospheric-drag": AtmosphericDragInitConfig,
+    "solar-radiation-pressure": SrpInitConfig,
+    "earth-radiation-pressure": ErpInitConfig,
+}
+
+individual_eom_map = {
+    "non-spherical": NotImplemented,
+    "third-body": NotImplemented,
+    "general-relativity": NotImplemented,
+    "atmospheric-drag": AtmosphericPerturbation,
+    "solar-radiation-pressure": NotImplemented,
+    "earth-radiation-pressure": NotImplemented,
+}
+
 
 def ui_seclector(perturbations: List[str]):
     """Returns the appropriate ui object depending on items in list of
@@ -166,3 +183,33 @@ def ui_seclector(perturbations: List[str]):
     raise EomUiError(
         f"No UI Object defined for perturbations: {perturbations}."
     )
+
+
+def match_ui_config_to_individual_init_configs(ui_config, individual_config):
+    required_fields = list(individual_config.__dataclass_fields__.keys())
+    arg_dict = {}
+    for k in required_fields:
+        arg_dict[k] = getattr(ui_config, k)
+    return classFromArgs(individual_config, arg_dict)
+
+
+def configure_eom_from_user_config(
+    user_config: dict, perturbations: List[str]
+):
+    ui_model = ui_seclector(perturbations)
+    ui_config = ui_model(**user_config)
+    two_body_ic = match_ui_config_to_individual_init_configs(
+        ui_config, TwoBodyInitConfig
+    )
+    two_body_eom = TwoBodyEom(two_body_ic)
+    pert_eom = []
+    for p in perturbations:
+        eom_obj = individual_eom_map[p]
+        pert_eom.append(
+            eom_obj(
+                match_ui_config_to_individual_init_configs(
+                    ui_config, individual_init_config_map[p]
+                )
+            )
+        )
+    return two_body_eom, pert_eom
