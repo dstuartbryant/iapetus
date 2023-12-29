@@ -17,7 +17,9 @@ def test_accelerations(sat_state_1, earth_params):
     density_model = ExponentialAtmosphericModel(partials_flag=False)
     rho = density_model(ss1.pi, ss1.pj, ss1.pk, ss1.p).rho
 
-    adic = AtmosphericDragInitConfig(partials_flag=False, Bstar_flag=False)
+    adic = AtmosphericDragInitConfig(
+        partials_flag=False, Bstar_flag=False, Cd_flag=False
+    )
     pert = AtmosphericPerturbation(adic)
     pout = pert(ss1)
 
@@ -35,7 +37,7 @@ def test_accelerations(sat_state_1, earth_params):
     assert ak == pout.accelerations.ak
 
 
-def test_partials_no_Bstar(sat_state_1, earth_params):
+def test_partials_no_Bstar_no_Cd(sat_state_1, earth_params):
     ss1 = sat_state_1
     ep = earth_params
     w = ep.rotation_rate
@@ -45,7 +47,9 @@ def test_partials_no_Bstar(sat_state_1, earth_params):
     drho_dpi = d.partials.drho_dpi
     drho_dpj = d.partials.drho_dpj
     drho_dpk = d.partials.drho_dpk
-    adic = AtmosphericDragInitConfig(partials_flag=True, Bstar_flag=False)
+    adic = AtmosphericDragInitConfig(
+        partials_flag=True, Bstar_flag=False, Cd_flag=False
+    )
     pert = AtmosphericPerturbation(adic)
     pout = pert(ss1)
 

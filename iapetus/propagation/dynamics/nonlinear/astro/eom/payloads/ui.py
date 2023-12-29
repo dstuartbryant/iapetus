@@ -66,12 +66,7 @@ class TwoBodyGenRel(TwoBody):
 
 class TwoBodyAtmosDrag(TwoBody):
     Bstar_flag: bool
-
-    @property
-    def atmos_drag_init_config(self):
-        return AtmosphericDragInitConfig(
-            partials_flag=self.partials_flag, Bstar_flag=self.Bstar_flag
-        )
+    Cd_flag: bool
 
 
 class TwoBodySrp(TwoBody):

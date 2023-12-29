@@ -117,11 +117,18 @@ class TestTwoBodyDrag:
 
     def test_accelerations_only(self, earth_params):
         mu = earth_params.mu
-        ui_config = {"mu": mu, "partials_flag": False, "Bstar_flag": False}
+        ui_config = {
+            "mu": mu,
+            "partials_flag": False,
+            "Bstar_flag": False,
+            "Cd_flag": False,
+        }
         eom = configure(ui_config, ["atmospheric-drag"])
         tbic = TwoBodyInitConfig(mu=earth_params.mu, partials_flag=False)
         tba = TwoBody(tbic)
-        adic = AtmosphericDragInitConfig(partials_flag=False, Bstar_flag=False)
+        adic = AtmosphericDragInitConfig(
+            partials_flag=False, Bstar_flag=False, Cd_flag=False
+        )
         ap = AtmosphericPerturbation(adic)
 
         accels, parts = eom(self.s_drag)
@@ -157,13 +164,20 @@ class TestTwoBodyDrag:
         assert parts("dak_dpj") == 0
         assert parts("dak_dpk") == 0
 
-    def test_partials_no_bstar(self, earth_params):
+    def test_partials_no_bstar_no_Cd(self, earth_params):
         mu = earth_params.mu
-        ui_config = {"mu": mu, "partials_flag": True, "Bstar_flag": False}
+        ui_config = {
+            "mu": mu,
+            "partials_flag": True,
+            "Bstar_flag": False,
+            "Cd_flag": False,
+        }
         eom = configure(ui_config, ["atmospheric-drag"])
         tbic = TwoBodyInitConfig(mu=earth_params.mu, partials_flag=True)
         tba = TwoBody(tbic)
-        adic = AtmosphericDragInitConfig(partials_flag=True, Bstar_flag=False)
+        adic = AtmosphericDragInitConfig(
+            partials_flag=True, Bstar_flag=False, Cd_flag=False
+        )
         ap = AtmosphericPerturbation(adic)
 
         accels, parts = eom(self.s_drag)

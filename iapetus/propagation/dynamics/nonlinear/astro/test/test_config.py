@@ -14,13 +14,13 @@ def test_state_vector_validation():
     Astrodynamics(
         **{
             "state_vector": ["translational", "Cd"],
-            "dynamics": ["atmospheric-drag"],
+            "perturbations": ["atmospheric-drag"],
         }
     )
     Astrodynamics(
         **{
             "state_vector": ["translational", "rotational", "Cd"],
-            "dynamics": ["atmospheric-drag"],
+            "perturbations": ["atmospheric-drag"],
         }
     )
 
@@ -46,11 +46,13 @@ def test_state_vector_validation():
 
 def test_dynamics_validation():
     ac = Astrodynamics(
-        **{"state_vector": ["translational"], "dynamics": ["non-spherical"]}
+        **{
+            "state_vector": ["translational"],
+            "perturbations": ["non-spherical"],
+        }
     )
 
-    assert "two-body" in ac.dynamics
-    assert "non-spherical" in ac.dynamics
+    assert "non-spherical" in ac.perturbations
 
 
 def test_cross_check_validation():
@@ -61,7 +63,7 @@ def test_cross_check_validation():
 
     assert (
         str(excinfo.value)
-        == "Cd cannot be in state vector if atmospheric dynamics are not used."
+        == "Cd cannot be in state vector if atmospheric perturbations are not used."
     )
 
 
@@ -95,7 +97,7 @@ def test_state_vector_formation():
     ac = Astrodynamics(
         **{
             "state_vector": ["translational", "Cd"],
-            "dynamics": ["atmospheric-drag"],
+            "perturbations": ["atmospheric-drag"],
         }
     )
     assert ac.state_vector_list == [
@@ -111,7 +113,7 @@ def test_state_vector_formation():
     ac = Astrodynamics(
         **{
             "state_vector": ["translational", "rotational", "Cd"],
-            "dynamics": ["atmospheric-drag"],
+            "perturbations": ["atmospheric-drag"],
         }
     )
     assert ac.state_vector_list == [
@@ -161,7 +163,7 @@ def test_state_vector_derivative_formation():
     ac = Astrodynamics(
         **{
             "state_vector": ["translational", "Cd"],
-            "dynamics": ["atmospheric-drag"],
+            "perturbations": ["atmospheric-drag"],
         }
     )
     assert ac.state_vector_derivative_list == [
@@ -177,7 +179,7 @@ def test_state_vector_derivative_formation():
     ac = Astrodynamics(
         **{
             "state_vector": ["translational", "rotational", "Cd"],
-            "dynamics": ["atmospheric-drag"],
+            "perturbations": ["atmospheric-drag"],
         }
     )
     assert ac.state_vector_derivative_list == [

@@ -2,14 +2,22 @@
 
 from typing import List, Optional
 
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, create_model, root_validator, validator
 
-UI_STATE_VECTOR_OPTIONS = ["translational", "rotational", "Cd"]
-PERTURBATION_MODELS = ["non-spherical", "atmospheric-drag"]
+from .eom.payloads.ui import PERTURBATION_NAMES
+
+UI_STATE_VECTOR_OPTIONS = ["translational", "rotational", "Bstar", "Cd"]
 
 
 class AstrodynamicsConfigError(Exception):
     pass
+
+
+def dynamic_field(key: str):
+    if key in ["Bstar", "Cd"]:
+        return {"Cd": (float, ...), "A_m2": (float, ...), "m_kg": (float, ...)}
+    else:
+        return {key: (float, ...)}
 
 
 class Astrodynamics(BaseModel):
@@ -25,6 +33,18 @@ class Astrodynamics(BaseModel):
                 "Found unexpected state_vector input."
             )
 
+        if "Bstar" in value and "translational" not in value:
+            raise AstrodynamicsConfigError(
+                "State vector cannot be configured with Bstar "
+                "without translational dynamics."
+            )
+
+        if "Bstar" in value and "Cd" in value:
+            raise AstrodynamicsConfigError(
+                "State vector cannote be configured with both Bstar and Cd at "
+                "the same time."
+            )
+
         if "Cd" in value and "translational" not in value:
             raise AstrodynamicsConfigError(
                 "State vector cannot be configured with drag coefficient Cd "
@@ -35,7 +55,7 @@ class Astrodynamics(BaseModel):
 
     @validator("perturbations")
     def check_perturbations_input(cls, value):
-        if not all([v in PERTURBATION_MODELS for v in value]):
+        if not all([v in PERTURBATION_NAMES for v in value]):
             raise AstrodynamicsConfigError(
                 "Found unexpected perturbations model input."
             )
@@ -101,6 +121,8 @@ class Astrodynamics(BaseModel):
             "angular_acceleration_1_radps2": "wdot1",
             "angular_acceleration_2_radps2": "wdot2",
             "angular_acceleration_3_radps2": "wdot3",
+            "Bstar": "Bstar",
+            "Bstar_rate": "Bstar_rate",
             "Cd": "Cd",
             "Cd_rate": "Cd_rate",
         }
@@ -157,6 +179,19 @@ class Astrodynamics(BaseModel):
                 pdm_map_list.append((f"d{dvar}_d{var}", idx, jdx))
 
         return pdm_map_list
+
+    def dynamic_ui_state_vector_model(self):
+        """Dynamically generates a state vector model for users to input
+        initial state values.
+
+        Uses un-abbreviated state vector list so users are forced to include
+        units of state vector elements to re-enforce units mindfulness.
+        """
+        config = {}
+        for item in self.state_vector_list:
+            for k, v in dynamic_field(item).items():
+                config[k] = v
+        return create_model("DynamicUserInputStateVectorModel", **config)
 
     @property
     def state_vector_list(self):

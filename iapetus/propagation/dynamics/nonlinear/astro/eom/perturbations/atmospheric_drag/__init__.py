@@ -42,6 +42,7 @@ class AtmosphericPerturbation(Perturbation):
         self.w = OMEGA_EARTH
         self.partials_flag = c.partials_flag
         self.Bstar_flag = c.Bstar_flag
+        self.Cd_flag = c.Cd_flag
         self.density_model = ExponentialAtmosphericModel(c.partials_flag)
 
     def pre_compute(self, s: TwoBodyDragState):
@@ -70,11 +71,14 @@ class AtmosphericPerturbation(Perturbation):
                 pc.vrelj,
                 pc.vrelk,
                 pc.vrel,
+                s.A,
+                s.m,
                 d.rho,
                 s.Bstar,
                 d.partials.drho_dpi,
                 d.partials.drho_dpj,
                 d.partials.drho_dpk,
                 self.Bstar_flag,
+                self.Cd_flag,
             )
         return output

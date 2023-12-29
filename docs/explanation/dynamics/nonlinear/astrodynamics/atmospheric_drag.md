@@ -3,7 +3,7 @@
 ## Accelerations
 Assuming a satellite is orbiting Earth, denote the satellite's state vector as
 
-\begin{equation}
+\begin{equation} \label{eq:basic_state_vector} \tag{1}
 \vec{X} = [p_i, p_j, p_k, v_i, v_j, v_k]^T,
 \end{equation}
 
@@ -12,13 +12,13 @@ where $p$ and $v$ denote position and velocity, respectively, and where $i$, $j$
 The acceleration due to atmospheric drag is defined as
 
 $$
-\label{eq:accel_formal} \tag{1}
+\label{eq:accel_formal} \tag{2}
 \vec{a} = -\frac{1}{2}\frac{C_D A}{m}\rho v_{rel}\vec{v}_{rel}
 $$
 
 where $C_D$ is a satellite's drag coefficient, $A$ is the cross-sectional area of a satellite that is oriented in the direction of the satellite's velocity vector relative to the atmosphere, $m$ is the satellite's mass, $\rho$ is atmospheric density, and here we define $\vec{v}_{rel}$, the satellite's velocity relative to the atmosphere, as
 
-\begin{equation} \label{eq:v_rel_with_derivatives} \tag{2}
+\begin{equation} \label{eq:v_rel_with_derivatives} \tag{3}
 \vec{v}_{rel} = \left[\frac{\mathrm{d}p_i}{\mathrm{d}t}+\omega_\oplus p_j, \frac{\mathrm{d}p_j}{\mathrm{d}t}-\omega_\oplus p_i, \frac{\mathrm{d}p_k}{\mathrm{d}t}\right]^T,
 \end{equation}
 
@@ -26,14 +26,14 @@ where $\omega_\oplus$ denotes the Earth's rotational rate.
 
 Sometimes it's useful to group all of the constant terms in Eq. \eqref{eq:accel_formal} into a single parameter called the ballistic coefficient, $B^*$, like so [@palmer2021]
 
-\begin{equation} \label{eq:bstar} \tag{24}
+\begin{equation} \label{eq:bstar} \tag{4}
 B^* = \frac{1}{2}\frac{C_D A}{m},
 \end{equation}
 
 so then \eqref{eq:accel_formal} can be re-written as
 
 $$
-\vec{a} = -B^*\rho v_{rel}\vec{v}_{rel}. \label{eq:accel_formal_2} \tag{25}
+\vec{a} = -B^*\rho v_{rel}\vec{v}_{rel}. \label{eq:accel_formal_2} \tag{5}
 $$
 
 Since
@@ -47,18 +47,18 @@ then \eqref{eq:v_rel_with_derivatives} can be simplified as
 \begin{align}
 \vec{v}_{rel} &= \left[v_i+\omega_\oplus p_j, v_j-\omega_\oplus p_i, v_k\right]^T,
 \\
-&= \left[ v_{rel,i}, v_{rel,j}, v_{rel,k}  \right] .\label{eq:rel_vel_vector} \tag{3}
+&= \left[ v_{rel,i}, v_{rel,j}, v_{rel,k}  \right] .\label{eq:rel_vel_vector} \tag{6}
 \end{align}
 
 Since 
 
-\begin{equation} \label{eq:rel_vel_mag} \tag{4}
+\begin{equation} \label{eq:rel_vel_mag} \tag{7}
 v_{rel} = |\vec{v}_{rel}| =\left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2}, 
 \end{equation}
 
 \eqref{eq:accel_formal_2} can be re-written as
 
-\begin{equation} \label{eq:accel_simplish} \tag{5}
+\begin{equation} \label{eq:accel_simplish} \tag{8}
 \vec{a} = -B^*\rho \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} \vec{v}_{rel}.
 \end{equation}
 
@@ -72,7 +72,7 @@ p &= \left( p_i^2 + p_j^2 + p_k^2  \right)^{1/2},
 
 and so, Eq. \eqref{eq:accel_simplish} can be re-written as
 
-\begin{equation} \label{eq:accel_simplish_2} \tag{26}
+\begin{equation} \label{eq:accel_simplish_2} \tag{9}
 \vec{a} = -B^*\rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} \vec{v}_{rel},
 \end{equation}
 
@@ -89,6 +89,49 @@ which, given $\vec{a} = [a_i, a_j, a_k]^T$, can be broken out into components as
     \end{align}
 
 ## Partial Derivatives
+
+The partial derivatives needed come from the relationship between the state vector $\vec{X}$ and its derivative with respect to time, $\dot{\vec{X}}$, i.e., 
+
+$$
+\frac{\partial \dot{\vec{X}}}{\partial \vec{X}}.
+$$
+
+#### Basic Case
+In the most basic case, $\dot{\vec{X}}$ is defined based on \eqref{eq:basic_state_vector} as
+
+$$
+\dot{\vec{X}} = \left[v_i, v_j, v_k, a_i, a_j, a_k\right]^T.
+$$
+
+#### $B^*$ in state vector
+Sometimes $B^*$ included in the state vector, i.e., 
+
+$$
+\vec{X} = [p_i, p_j, p_k, v_i, v_j, v_k, B^*]^T,
+$$
+
+in which case $\dot{\vec{X}}$ becomes
+
+$$
+\dot{\vec{X}} = \left[v_i, v_j, v_k, a_i, a_j, a_k, 0\right]^T.
+$$
+
+#### $C_D*$ in state vector
+Sometimes only $C_D$ included in the state vector, i.e., 
+
+$$
+\vec{X} = [p_i, p_j, p_k, v_i, v_j, v_k, C_D]^T,
+$$
+
+in which case $\dot{\vec{X}}$ becomes
+
+$$
+\dot{\vec{X}} = \left[v_i, v_j, v_k, a_i, a_j, a_k, 0\right]^T.
+$$
+
+
+
+
 
 ### General Atmospheric Density Model
 For the purposes of these derivations, we only care about finding the partial derivatives of the acceleration components wrt all state variable components. See the appendix for the full derivations.
@@ -153,11 +196,24 @@ In instances which $B^*$ is included in the state vector, the following partial 
 !!! note ""
 
     \begin{align}
-    \frac{\partial a_i}{\partial B^*} &= \rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} v_{rel,i},
+    \frac{\partial a_i}{\partial B^*} &= -\rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} v_{rel,i},
     \\
-    \frac{\partial a_j}{\partial B^*} &= \rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} v_{rel,j},
+    \frac{\partial a_j}{\partial B^*} &= -\rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} v_{rel,j},
     \\
-    \frac{\partial a_k}{\partial B^*} &=\rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} v_{rel,k}.
+    \frac{\partial a_k}{\partial B^*} &= -\rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} v_{rel,k}.
+    \end{align}
+
+#### $C_D$ Partial Derivatives
+In instances which only $C_D$ is included in the state vector, the following partial derivatives are needed.
+
+!!! note ""
+
+    \begin{align}
+    \frac{\partial a_i}{\partial C_D} &= -\frac{1}{2}\frac{A}{m}\rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} v_{rel,i},
+    \\
+    \frac{\partial a_j}{\partial C_D} &= -\frac{1}{2}\frac{A}{m}\rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} v_{rel,j},
+    \\
+    \frac{\partial a_k}{\partial C_D} &= -\frac{1}{2}\frac{A}{m}\rho(p) \left( v_{rel,i}^2 + v_{rel,j}^2 + v_{rel,k}^2\right)^{1/2} v_{rel,k}.
     \end{align}
 
 ### Exponential Atmospheric Density Model

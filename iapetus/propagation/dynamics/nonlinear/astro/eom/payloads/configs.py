@@ -55,6 +55,7 @@ class AtmosphericDragInitConfig(PerturbationInitConfig):
     """Configuration class for initializing Atmospheric Drag perturbations."""
 
     Bstar_flag: bool  # Indicates whether to additionaly compute Bstar partials
+    Cd_flag: bool  # Indicates whether to additionally compute Cd partials
 
 
 @dataclass

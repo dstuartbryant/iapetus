@@ -13,12 +13,15 @@ def partials(
     vrelj: float,
     vrelk: float,
     vrel: float,
+    A: float,
+    m: float,
     rho: float,
     Bstar: float,
     drho_dpi: float,
     drho_dpj: float,
     drho_dpk: float,
     Bstar_flag: bool,
+    Cd_flag: bool,
 ) -> AtmosphericDragPartials:
     """Computes partial derivatives for atmospheric drag dynamics.
 
@@ -27,6 +30,8 @@ def partials(
         vrelj (float): j-th relative velocity component [mps]
         vrelk (float): k-th relative velocity component [mps]
         vrel (float): relative velocity magnitude [mps]
+        A (float): area [m2] - included in case needed for Cd partials
+        m (float): mass [kg] - included in case needed for Cd partials
         rho (float): atmospheric density [kgpm3]
         Bstar (float): B* = 1/2*Cd*A/m [m2pkg]; Cd is drag coefficient
             [unitless], A is area [m2], and m is mass [kg].
@@ -35,6 +40,8 @@ def partials(
         drho_dpk (float): Partial derivative of rho wrt pk
         Bstar_flat (bool): if True, additionaly computes partial derivatives
             wrt to Bstar
+        Cd_flag (bool): if True, additonally computes partial derivatives wrt
+            to Cd
     """
     output = AtmosphericDragPartials(
         dai_dpi=-Bstar
@@ -74,7 +81,13 @@ def partials(
     )
     if Bstar_flag:
         coeff = rho * vrel
-        output.dai_dBstar = coeff * vreli
-        output.daj_dBstar = coeff * vrelj
-        output.dak_dBstar = coeff * vrelk
+        output.dai_dBstar = -coeff * vreli
+        output.daj_dBstar = -coeff * vrelj
+        output.dak_dBstar = -coeff * vrelk
+    if Cd_flag:
+        coeff = 0.5 * A / m * rho * vrel
+        output.dai_dBstar = -coeff * vreli
+        output.daj_dBstar = -coeff * vrelj
+        output.dak_dBstar = -coeff * vrelk
+
     return output
