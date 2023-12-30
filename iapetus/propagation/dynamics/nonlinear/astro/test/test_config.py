@@ -45,14 +45,19 @@ def test_state_vector_validation():
 
 
 def test_dynamics_validation():
-    ac = Astrodynamics(
-        **{
-            "state_vector": ["translational"],
-            "perturbations": ["non-spherical"],
-        }
-    )
+    with pytest.raises(AstrodynamicsConfigError) as excinfo:
+        Astrodynamics(
+            **{
+                "state_vector": ["translational"],
+                "perturbations": ["non-spherical"],
+            }
+        )
 
-    assert "non-spherical" in ac.perturbations
+    assert (
+        str(excinfo.value)
+        == "The following perturbations are not implemented yet: "
+        "non-spherical."
+    )
 
 
 def test_cross_check_validation():
@@ -61,9 +66,9 @@ def test_cross_check_validation():
             **{"state_vector": ["translational", "rotational", "Cd"]}
         )
 
-    assert (
-        str(excinfo.value)
-        == "Cd cannot be in state vector if atmospheric perturbations are not used."
+    assert str(excinfo.value) == (
+        "Cd cannot be in state vector if atmospheric perturbations are "
+        "not used."
     )
 
 
@@ -197,3 +202,28 @@ def test_state_vector_derivative_formation():
         "angular_acceleration_3_radps2",
         "Cd_rate",
     ]
+
+
+def test_dynamic_ui_state_vector_model():
+    ac = Astrodynamics(
+        **{
+            "state_vector": ["translational"],
+            "perturbations": ["atmospheric-drag"],
+        }
+    )
+
+    model = ac.dynamic_ui_state_vector_model()
+    expected_keys = [
+        "position_i_m",
+        "position_j_m",
+        "position_k_m",
+        "velocity_i_mps",
+        "velocity_j_mps",
+        "velocity_k_mps",
+    ]
+    mf = model.__fields__
+    for k, v in mf.items():
+        assert k in expected_keys
+        assert v.name == k
+        assert v.type_ == float
+        assert v.required is True

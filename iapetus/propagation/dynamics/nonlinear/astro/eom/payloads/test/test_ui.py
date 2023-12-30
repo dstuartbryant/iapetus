@@ -1,11 +1,17 @@
 """EOM UI test module."""
 
 from iapetus.propagation.dynamics.nonlinear.astro.eom.payloads.ui import (
+    IMPLEMENTED_PERTURBATION_NAMES,
     PERTURBATION_NAMES,
     individual_eom_map,
     individual_init_config_map,
     ui_map,
 )
+
+
+def test_implemented_perturbation_names():
+    for name in IMPLEMENTED_PERTURBATION_NAMES:
+        assert name in PERTURBATION_NAMES
 
 
 def test_ui_map_pert_names():

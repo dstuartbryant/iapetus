@@ -36,6 +36,8 @@ PERTURBATION_NAMES = [
     "earth-radiation-pressure",
 ]
 
+IMPLEMENTED_PERTURBATION_NAMES = ["atmospheric-drag"]
+
 
 def classFromArgs(className, argDict):
     fieldSet = {f.name for f in fields(className) if f.init}

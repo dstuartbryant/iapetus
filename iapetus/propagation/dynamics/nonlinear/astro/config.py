@@ -1,10 +1,15 @@
 """Astrodynamics (dynamics) configuration interface module."""
 
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 
+import numpy as np
 from pydantic import BaseModel, create_model, root_validator, validator
 
-from .eom.payloads.ui import PERTURBATION_NAMES
+from .constants import MU
+from .eom import Eom
+from .eom import configure as eom_configure
+from .eom.payloads.call_states import TwoBodyDragState, TwoBodyState
+from .eom.payloads.ui import IMPLEMENTED_PERTURBATION_NAMES, PERTURBATION_NAMES
 
 UI_STATE_VECTOR_OPTIONS = ["translational", "rotational", "Bstar", "Cd"]
 
@@ -24,6 +29,7 @@ class Astrodynamics(BaseModel):
     """Astrodynamics user interface configuration model."""
 
     state_vector: List[str]
+    celestial_body: str
     perturbations: Optional[List[str]] = []
 
     @validator("state_vector")
@@ -60,6 +66,40 @@ class Astrodynamics(BaseModel):
                 "Found unexpected perturbations model input."
             )
         return value
+
+    @validator("perturbations")
+    def check_if_perturbations_implemented(cls, value):
+        bad_perts = []
+        for v in value:
+            if v not in IMPLEMENTED_PERTURBATION_NAMES:
+                bad_perts.append(v)
+        if len(bad_perts) > 0:
+            raise AstrodynamicsConfigError(
+                f"The following perturbations are not implemented yet: "
+                f"{', '.join(bad_perts)}."
+            )
+        return value
+
+    @validator("celestial_body")
+    def check_if_celestial_body_in_list(cls, value):
+        if value not in list(MU.keys()):
+            raise AstrodynamicsConfigError(
+                f"Unexpected celestial body found: {value}"
+            )
+
+        return value
+
+    @root_validator
+    def cross_check_celestial_body_and_perturbations(cls, values):
+        if (
+            "atmospheric-drag" in values["perturbations"]
+            and values["celestial_body"] != "Earth"
+        ):
+            raise AstrodynamicsConfigError(
+                "Non-Earth atmospheric perturbations are unavailable."
+            )
+
+        return values
 
     @root_validator
     def cross_check_state_vector_and_perturbations_input(cls, values):
@@ -125,6 +165,8 @@ class Astrodynamics(BaseModel):
             "Bstar_rate": "Bstar_rate",
             "Cd": "Cd",
             "Cd_rate": "Cd_rate",
+            "A_m2": "A",
+            "m_kg": "m",
         }
 
     def form_abbreviated_state_vector_list(self):
@@ -176,22 +218,9 @@ class Astrodynamics(BaseModel):
         pdm_map_list = []
         for idx, dvar in enumerate(self.abbrv_state_vector_derivative_list):
             for jdx, var in enumerate(self.abbrv_state_vector_list):
-                pdm_map_list.append((f"d{dvar}_d{var}", idx, jdx))
+                pdm_map_list.append(("d{dvar}_d{var}", idx, jdx))
 
         return pdm_map_list
-
-    def dynamic_ui_state_vector_model(self):
-        """Dynamically generates a state vector model for users to input
-        initial state values.
-
-        Uses un-abbreviated state vector list so users are forced to include
-        units of state vector elements to re-enforce units mindfulness.
-        """
-        config = {}
-        for item in self.state_vector_list:
-            for k, v in dynamic_field(item).items():
-                config[k] = v
-        return create_model("DynamicUserInputStateVectorModel", **config)
 
     @property
     def state_vector_list(self):
@@ -216,3 +245,214 @@ class Astrodynamics(BaseModel):
     @property
     def abbrv_state_vector_derivative_list(self):
         return self.form_abbreviated_state_vector_derivative_list()
+
+
+class DerivativeFunctionError(Exception):
+    pass
+
+
+def generate_state_only_derviative_fcn(
+    x_list: List[str],
+    xdot_list: List[str],
+    eom: Eom,
+    eom_state_model: Union[TwoBodyState, TwoBodyDragState],
+):
+    def der(t, y):
+        # Place incoming state y into appropriate container for EOM processing
+        state_kwargs = {}
+        for idx, item in enumerate(x_list):
+            state_kwargs[item] = y[idx]
+        y_modeled = eom_state_model(**state_kwargs)
+
+        # EOM computations
+        accels, parts = eom(y_modeled)
+
+        # Assemble ydot output
+        ydot = []
+        for idx, xdot in enumerate(xdot_list):
+            if xdot in x_list:
+                ydot.append(y[x_list.index(xdot)])
+            else:
+                try:
+                    ydot.append(accels(xdot))
+                except Exception as exc:
+                    raise DerivativeFunctionError(
+                        f"Unexpected error in derivative function: "
+                        f"{str(exc.args[0])}"
+                    )
+        return ydot
+
+    return der
+
+
+def generate_state_and_stm_derivative_fcn(
+    x_list: List[str],
+    xdot_list: List[str],
+    partials_map: List[Tuple],
+    eom: Eom,
+    eom_state_model: Union[TwoBodyState, TwoBodyDragState],
+):
+    def der(t, y):
+        # Reshape y and stm
+        y_state = y[: len(x_list)]
+        y_stm = y[len(x_list) :]
+        phi = np.zeros((len(y_state), len(y_state)))
+        for idx, item in enumerate(partials_map):
+            phi[item[1], item[2]] = y_stm[idx]
+
+        # Place incoming state y into appropriate container for EOM processing
+        state_kwargs = {}
+        for idx, item in enumerate(x_list):
+            state_kwargs[item] = y_state[idx]
+        y_modeled = eom_state_model(**state_kwargs)
+
+        # EOM computations
+        accels, parts = eom(y_modeled)
+
+        # Form A matrix from partials
+        A = np.zeros((len(y_state), len(y_state)))
+        for item in partials_map:
+            A[item[1], item[2]] = parts(item[0])
+
+        # Compute stm derivative
+        phi_dot = A @ phi
+
+        # Assemble ydot output
+        ydot = []
+        for idx, xdot in enumerate(xdot_list):
+            if xdot in x_list:
+                ydot.append(y[x_list.index(xdot)])
+            else:
+                try:
+                    ydot.append(accels(xdot))
+                except Exception as exc:
+                    raise DerivativeFunctionError(
+                        f"Unexpected error in derivative function: "
+                        f"{str(exc.args[0])}"
+                    )
+        ydot = np.concatenate(
+            (
+                ydot,
+                phi_dot.reshape(
+                    len(y_state) ** 2,
+                ),
+            ),
+            axis=0,
+        )
+
+        return ydot
+
+    return der
+
+
+class PropagatorInit:
+    """Produces a propagator to later be instantiated with timing
+    parameters.
+
+    This includes dynamically generating derivative functions for integrators.
+    """
+
+    def __init__(
+        self,
+        dynamics: Astrodynamics,
+        stm_flag: bool,
+    ):
+        self.dynamics = dynamics
+        self.stm_flag = stm_flag
+        self._der = None
+
+    def compile_eom_init_dict(self) -> dict:
+        user_config = {}
+        user_config["mu"] = MU[self.dynamics.celestial_body]
+        if self.stm_flag:
+            user_config["partials_flag"] = True
+            if "Bstar" in self.dynamics.state_vector:
+                user_config["Bstar_flag"] = True
+            else:
+                user_config["Bstar_flag"] = False
+            if "Cd" in self.dynamics.state_vector:
+                user_config["Cd"] = True
+            else:
+                user_config["Cd"] = False
+        else:
+            user_config["partials_flag"] = False
+            user_config["Bstar_flag"] = False
+            user_config["Cd"] = False
+
+        return user_config
+
+    def compile_eom(self) -> Eom:
+        user_config = self.compile_eom_init_dict()
+        return eom_configure(
+            user_config=user_config, perturbations=self.dynamics.perturbations
+        )
+
+    def select_eom_state_model(self):
+        if "atmospheric-drag" in self.dynamics.perturbations:
+            return TwoBodyDragState
+        else:
+            return TwoBodyState
+
+    def compile_derivative_fcn(self):
+        eom = self.compile_eom()
+        eom_state_model = self.select_eom_state_model()
+        if self.stm_flag:
+            return generate_state_and_stm_derivative_fcn(
+                x_list=self.dynamics.abbrv_state_vector_list,
+                xdot_list=self.dynamics.abbrv_state_vector_derivative_list,
+                partials_map=self.dynamics.partial_derivatives_map,
+                eom=eom,
+                eom_state_model=eom_state_model,
+            )
+        else:
+            return generate_state_only_derviative_fcn(
+                x_list=self.dynamics.abbrv_state_vector_list,
+                xdot_list=self.dynamics.abbrv_state_vector_derivative_list,
+                eom=eom,
+                eom_state_model=eom_state_model,
+            )
+
+    def dynamic_ui_state_vector_model(self):
+        """Dynamically generates a state vector model for users to input
+        initial state values.
+
+        Uses un-abbreviated state vector list so users are forced to include
+        units of state vector elements to re-enforce units mindfulness.
+
+        This context is different than the state vector from the state space
+        representation model used to define state vector derivative lists and
+        state transition matrix partials.
+
+        The context here is 'all of what the user needs to input' to process
+        the state space representation models.
+
+        E.g., if atmospheric-density is used, but Cd is not in state space
+        representation, the user still needs to provide Cd, A, and m for models
+        to function.
+        """
+        config = {}
+        state_vector_list = self.dynamics.state_vector_list
+        if "atmospheric-drag" in self.dynamics.perturbations:
+            if (
+                "Cd" not in state_vector_list
+                or "Bstar" not in state_vector_list
+            ):
+                state_vector_list.append("Cd")
+        for item in state_vector_list:
+            for k, v in dynamic_field(item).items():
+                config[k] = v
+        return create_model("DynamicUserInputStateVectorModel", **config)
+
+    def convert_ui_state_to_eom_state(self, dynamic_ui_model):
+        eom_state_model = self.select_eom_state_model()
+        kwargs = {}
+        for k in dynamic_ui_model.__fields__.keys():
+            new_k = self.dynamics.state_abbrv_map[k]
+            kwargs[new_k] = getattr(dynamic_ui_model, k)
+        return eom_state_model(**kwargs)
+
+    @property
+    def der(self):
+        if isinstance(self._der, type(None)):
+            self._der = self.compile_derivative_fcn
+        return self._der
