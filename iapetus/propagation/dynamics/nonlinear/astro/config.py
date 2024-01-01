@@ -8,6 +8,7 @@ from pydantic import BaseModel, create_model, root_validator, validator
 from .constants import MU
 from .eom import Eom
 from .eom import configure as eom_configure
+from .eom.payloads import extras
 from .eom.payloads.call_states import TwoBodyDragState, TwoBodyState
 from .eom.payloads.ui import IMPLEMENTED_PERTURBATION_NAMES, PERTURBATION_NAMES
 
@@ -256,12 +257,18 @@ def generate_state_only_derviative_fcn(
     xdot_list: List[str],
     eom: Eom,
     eom_state_model: Union[TwoBodyState, TwoBodyDragState],
+    extras_model: Optional[extras.AtmosphericDragExtras] = None,
 ):
     def der(t, y):
+        print(f"\nY: {y}\n")
         # Place incoming state y into appropriate container for EOM processing
         state_kwargs = {}
         for idx, item in enumerate(x_list):
             state_kwargs[item] = y[idx]
+        if extras_model:
+            for k_extra, v_extra in extras_model():
+                state_kwargs[k_extra] = v_extra
+        print(f"\nstate_kwargs: {state_kwargs}\n")
         y_modeled = eom_state_model(**state_kwargs)
 
         # EOM computations
@@ -291,11 +298,13 @@ def generate_state_and_stm_derivative_fcn(
     partials_map: List[Tuple],
     eom: Eom,
     eom_state_model: Union[TwoBodyState, TwoBodyDragState],
+    extras_model: Optional[extras.AtmosphericDragExtras] = None,
 ):
     def der(t, y):
         # Reshape y and stm
-        y_state = y[: len(x_list)]
-        y_stm = y[len(x_list) :]
+        state_length = len(x_list)
+        y_state = y[:state_length]
+        y_stm = y[state_length:]
         phi = np.zeros((len(y_state), len(y_state)))
         for idx, item in enumerate(partials_map):
             phi[item[1], item[2]] = y_stm[idx]
@@ -304,6 +313,9 @@ def generate_state_and_stm_derivative_fcn(
         state_kwargs = {}
         for idx, item in enumerate(x_list):
             state_kwargs[item] = y_state[idx]
+        if extras_model:
+            for k_extra, v_extra in extras_model():
+                state_kwargs[k_extra] = v_extra
         y_modeled = eom_state_model(**state_kwargs)
 
         # EOM computations
@@ -360,6 +372,8 @@ class PropagatorInit:
         self.dynamics = dynamics
         self.stm_flag = stm_flag
         self._der = None
+        self.Cd_flag = False
+        self.Bstar_flag = False
 
     def compile_eom_init_dict(self) -> dict:
         user_config = {}
@@ -368,17 +382,22 @@ class PropagatorInit:
             user_config["partials_flag"] = True
             if "Bstar" in self.dynamics.state_vector:
                 user_config["Bstar_flag"] = True
+                self.Bstar_flag = True
             else:
                 user_config["Bstar_flag"] = False
+                self.Bstar_flag = False
             if "Cd" in self.dynamics.state_vector:
-                user_config["Cd"] = True
+                user_config["Cd_flag"] = True
+                self.Cd_flag = True
             else:
-                user_config["Cd"] = False
+                user_config["Cd_flag"] = False
+                self.Cd_flag = False
         else:
             user_config["partials_flag"] = False
             user_config["Bstar_flag"] = False
-            user_config["Cd"] = False
-
+            self.Bstar_flag = False
+            user_config["Cd_flag"] = False
+            self.Cd_flag = False
         return user_config
 
     def compile_eom(self) -> Eom:
@@ -393,9 +412,22 @@ class PropagatorInit:
         else:
             return TwoBodyState
 
-    def compile_derivative_fcn(self):
+    def get_extras_model(
+        self, init_state: Union[TwoBodyState, TwoBodyDragState]
+    ):
+        if "atmospheric-drag" in self.dynamics.perturbations:
+            return extras.AtmosphericDragExtras(
+                init_state=init_state,
+                Cd_flag=self.Cd_flag,
+                Bstar_flag=self.Bstar_flag,
+            )
+
+    def compile_derivative_fcn(
+        self, init_state: Union[TwoBodyState, TwoBodyDragState]
+    ):
         eom = self.compile_eom()
         eom_state_model = self.select_eom_state_model()
+        eom_extras_model = self.get_extras_model(init_state=init_state)
         if self.stm_flag:
             return generate_state_and_stm_derivative_fcn(
                 x_list=self.dynamics.abbrv_state_vector_list,
@@ -403,6 +435,7 @@ class PropagatorInit:
                 partials_map=self.dynamics.partial_derivatives_map,
                 eom=eom,
                 eom_state_model=eom_state_model,
+                extras_model=eom_extras_model,
             )
         else:
             return generate_state_only_derviative_fcn(
@@ -410,6 +443,7 @@ class PropagatorInit:
                 xdot_list=self.dynamics.abbrv_state_vector_derivative_list,
                 eom=eom,
                 eom_state_model=eom_state_model,
+                extras_model=eom_extras_model,
             )
 
     def dynamic_ui_state_vector_model(self):
@@ -451,8 +485,12 @@ class PropagatorInit:
             kwargs[new_k] = getattr(dynamic_ui_model, k)
         return eom_state_model(**kwargs)
 
-    @property
-    def der(self):
-        if isinstance(self._der, type(None)):
-            self._der = self.compile_derivative_fcn
+    # @property
+    # def der(self):
+    #     if isinstance(self._der, type(None)):
+    #         self._der = self.compile_derivative_fcn()
+    #     return self._der
+
+    def update_der(self, init_state: Union[TwoBodyState, TwoBodyDragState]):
+        self._der = self.compile_derivative_fcn(init_state)
         return self._der

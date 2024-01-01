@@ -6,7 +6,7 @@ import inspect
 from .dynamics.nonlinear.astro import Astrodynamics, AstroInit, AstroPropIniit
 from .integrators import rk4, rk45, rk78
 
-INTEGRATORS = {"rk4": rk4, "rk45": rk45, "rk78": rk78}
+INTEGRATORS = {"rk4": rk4.rk4, "rk45": rk45.rk45, "rk78": rk78.rk78}
 
 
 class PropagatorConfigError(Exception):
@@ -44,7 +44,6 @@ class AstroProp:
         self.prop_init = AstroPropIniit(
             dynamics=self.dynamics,
             stm_flag=ui_config.stm_flag,
-            integrator=ui_config.integrator,
         )
         self.integrator = get_integrator(ui_config.integrator)
 
@@ -55,18 +54,19 @@ class AstroProp:
         # Form a list of state elements based on Astrodynamics definitions
         eom_model_args = [
             x
-            for x in inspect.getfullargspec(eom_state_model)
+            for x in inspect.getfullargspec(eom_state_model).args
             if "self" not in x
         ]
         init_state = [getattr(eom_state, x) for x in eom_model_args]
-        return init_state
+        return init_state, eom_state
 
     def __call__(self, u_state, tspan, dt, tspantol):
-        y0 = self.redefine_user_input_numerical_state(u_state)
-        T, Y = self.integrator(self.prop_init.der, y0, tspan, dt, tspantol)
+        y0, eom_state = self.redefine_user_input_numerical_state(u_state)
+        derivative_fcn = self.prop_init.update_der(eom_state)
+        T, Y = self.integrator(derivative_fcn, y0, tspan, dt, tspantol)
 
         return T, Y
 
     @property
     def user_defined_numerical_initial_state_model(self):
-        return self.prop_init.dynamic_ui_state_vector_model
+        return self.prop_init.dynamic_ui_state_vector_model()
