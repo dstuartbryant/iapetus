@@ -1,5 +1,6 @@
 """Astrodynamics (dynamics) configuration interface module."""
 
+import inspect
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -8,6 +9,7 @@ from pydantic import BaseModel, create_model, root_validator, validator
 from .constants import MU
 from .eom import Eom
 from .eom import configure as eom_configure
+from .eom import state
 from .eom.payloads import extras
 from .eom.payloads.call_states import TwoBodyDragState, TwoBodyState
 from .eom.payloads.ui import IMPLEMENTED_PERTURBATION_NAMES, PERTURBATION_NAMES
@@ -20,10 +22,18 @@ class AstrodynamicsConfigError(Exception):
 
 
 def dynamic_field(key: str):
-    if key in ["Bstar", "Cd"]:
+    if key in ["Cd"]:
         return {"Cd": (float, ...), "A_m2": (float, ...), "m_kg": (float, ...)}
     else:
         return {key: (float, ...)}
+
+
+def dynamic_field_just_copy(key: str):
+    return {key: (float, ...)}
+
+
+def get_class_arg_names(obj):
+    return [x for x in inspect.getfullargspec(obj).args if "self" not in x]
 
 
 class Astrodynamics(BaseModel):
@@ -248,6 +258,218 @@ class Astrodynamics(BaseModel):
         return self.form_abbreviated_state_vector_derivative_list()
 
 
+class StateContextManagerFactory:
+    """Dynamically creates relational methods between the different types of
+    state represenation contexts and the input/output types they use.
+    """
+
+    def __init__(self, dynamics: Astrodynamics, stm_flag: bool):
+        self.dynamics = dynamics
+        self.stm_flag = stm_flag
+        self._ui_input_init_context_model = None
+        self._abbrv_ui_input_init_context_model = None
+        # self._derivative_function_context_model = None
+        self._eom_context_model = None
+        self._ui_output_context_model = None
+
+    def generate_ui_state_vector_model(self):
+        """Dynamically generates a state vector model for users to input
+        initial state values.
+
+        Uses un-abbreviated state vector list so users are forced to include
+        units of state vector elements to re-enforce units mindfulness.
+
+        This context is different than the state vector from the state space
+        representation model used to define state vector derivative lists and
+        state transition matrix partials.
+
+        The context here is 'all of what the user needs to input' to process
+        the state space representation models.
+
+        E.g., if atmospheric-density is used, but Cd is not in state space
+        representation, the user still needs to provide Cd, A, and m for models
+        to function.
+        """
+        config = {}
+        state_vector_list = self.dynamics.state_vector_list
+        if "atmospheric-drag" in self.dynamics.perturbations:
+            if (
+                "Cd" not in state_vector_list
+                or "Bstar" not in state_vector_list
+            ):
+                state_vector_list.append("Cd")
+        for item in state_vector_list:
+            for k, v in dynamic_field(item).items():
+                config[k] = v
+        return create_model("DynamicUserInputStateVectorModel", **config)
+
+    def define_abbrv_ui_state_model(self):
+        """Abbreviated version of initial state model is needed for
+        `derivative_fcn_to_eom_context` to function properly.
+        """
+        ui_model = self.ui_input_init_context_model
+        args = [x for x in ui_model.__fields__.keys()]
+        abbrv_args = [self.dynamics.state_abbrv_map[x] for x in args]
+        config = {}
+        for item in abbrv_args:
+            for k, v in dynamic_field_just_copy(key=item).items():
+                config[k] = v
+        return create_model("AbbrvDynamicUserInputStateVectorModel", **config)
+
+    def define_populate_abbrv_ui_state_model_method(self):
+        state_abbrv_map = self.dynamics.state_abbrv_map
+        abbrv_ui_input_context_model = self.abbrv_ui_input_context_model
+
+        def populate_abbrv_ui_state_model(self, init_state):
+            args = {
+                k: getattr(init_state, k) for k in init_state.__fields__.keys()
+            }
+            abbrv_args = {}
+            for k, v in args.items():
+                abbrv_args[state_abbrv_map[k]] = v
+            return abbrv_ui_input_context_model(**abbrv_args)
+
+        return populate_abbrv_ui_state_model
+
+    def define_ui_input_to_derivative_fcn_method(self):
+        state_vector_list = self.dynamics.state_vector_list
+        ui_input_init_context_model = self.ui_input_init_context_model
+
+        def ui_input_to_derivative_fcn_context(
+            self, s: ui_input_init_context_model
+        ) -> np.ndarray:
+            return np.array([getattr(s, x) for x in state_vector_list])
+
+        return ui_input_to_derivative_fcn_context
+
+    def generate_eom_context_model(self):
+        if "atmospheric-drag" not in self.dynamics.perturbations:
+            if not self.stm_flag:
+                return state.TwoBodyWithoutStm
+            else:
+                return state.TwoBodyWithStm
+        else:
+            if not self.stm_flag:
+                if (
+                    "Bstar" not in self.dynamics.state_vector
+                    and "Cd" not in self.dynamics.state_vector
+                ):
+                    return state.TwoBodyDragWithoutStm
+                elif "Bstar" in self.dynamics.state_vector:
+                    return state.TwoBodyDragBstarWithoutStm
+                elif "Cd" in self.dynamics.state_vector:
+                    return state.TwoBodyDragCdWithoutStm
+            else:
+                if (
+                    "Bstar" not in self.dynamics.state_vector
+                    and "Cd" not in self.dynamics.state_vector
+                ):
+                    return state.TwoBodyDragWithStm
+                elif "Bstar" in self.dynamics.state_vector:
+                    return state.TwoBodyDragBstarWithStm
+                elif "Cd" in self.dynamics.state_vector:
+                    return state.TwoBodyDragCdWithStm
+
+    def define_derivative_fcn_to_eom_method(self):
+        """Defines a method to convert essentially an np.ndarray (vector,
+        DerivativeFunctionContext) into the appropriate EomContext state used
+        for EOM processing.
+
+        Some elements of the EomContext model may not be present in the
+        DerivativeFunctionContext vector, e.g., Area and mass when Cd is
+        included in the state-space representation of satellite state.
+
+        Therefore, this method requires access to the initial state definitions
+        of those values.
+
+        How this can be done? Note that the method produced by this method will
+        become a method of the class that is dynamically defined by this class.
+        So, we have to make sure that said dynamically defined class also
+        includes an attribute that can be called to access such values not
+        contained in the DerivativeFunctionContext vector.
+        """
+        abbrv_state_vector_list = self.dynamics.abbrv_state_vector_list
+        eom_context_model = self.eom_context_model
+        eom_arg_names = get_class_arg_names(eom_context_model)
+        # perts = self.dynamics.perturbations
+        args_not_in_deriv_fcn_context = list(
+            set(eom_arg_names).difference(set(abbrv_state_vector_list))
+        )
+        # Build EomContextModel kwargs-index map
+        # Keys are kwarg names. Values are indices of DerivativeFunctionContext
+        # vector elements that map to those names.
+        # NOTE: Only builds map of items that exist in both the
+        # DerivativeFunctionContext and EomContext models.
+        kwargs_idx_map = {
+            k: abbrv_state_vector_list.index(k)
+            for k in eom_arg_names
+            if k in abbrv_state_vector_list
+        }
+
+        def derivative_fcn_to_eom_context(
+            self, s: np.ndarray
+        ) -> self.eom_context_model:
+            """
+            NOTE: ASSUMPTION: self.init_state in this method's context
+                  assumes the class that is parent to this method has an
+                  `init_state` attribute that has the values we need to fill in
+                  the EomContextModel, if necessary.
+            """
+            kwargs = {k: s[v] for k, v in kwargs_idx_map.items()}
+            for arg in args_not_in_deriv_fcn_context:
+                kwargs[arg] = getattr(self.abbrv_init_state, arg)
+            return eom_context_model(**kwargs)
+
+        return derivative_fcn_to_eom_context
+
+    def __call__(self):
+        ui_init_state_type = self.ui_input_init_context_model
+        method_1 = self.define_ui_input_to_derivative_fcn_method()
+        method_2 = self.define_derivative_fcn_to_eom_method()
+        method_3 = self.define_populate_abbrv_ui_state_model_method()
+
+        def constructor(self, ui_init_state: dict):
+            self.init_state = ui_init_state_type(**ui_init_state)
+            self.abbrv_init_state = self.populate_abbrv_ui_state_model(
+                self.init_state
+            )
+
+        StateContextManager = type(
+            "StateContextManager",
+            (object,),
+            {
+                "__init__": constructor,
+                # Methods
+                "populate_abbrv_ui_state_model": method_3,
+                "ui_input_to_derivative_fcn_context": method_1,
+                "derivative_fcn_to_eom_context": method_2,
+            },
+        )
+        return StateContextManager
+
+    @property
+    def ui_input_init_context_model(self):
+        if isinstance(self._ui_input_init_context_model, type(None)):
+            self._ui_input_init_context_model = (
+                self.generate_ui_state_vector_model()
+            )
+        return self._ui_input_init_context_model
+
+    @property
+    def abbrv_ui_input_context_model(self):
+        if isinstance(self._abbrv_ui_input_init_context_model, type(None)):
+            self._abbrv_ui_input_init_context_model = (
+                self.define_abbrv_ui_state_model()
+            )
+        return self._abbrv_ui_input_init_context_model
+
+    @property
+    def eom_context_model(self):
+        if isinstance(self._eom_context_model, type(None)):
+            self._eom_context_model = self.generate_eom_context_model()
+        return self._eom_context_model
+
+
 class DerivativeFunctionError(Exception):
     pass
 
@@ -445,37 +667,6 @@ class PropagatorInit:
                 eom_state_model=eom_state_model,
                 extras_model=eom_extras_model,
             )
-
-    def dynamic_ui_state_vector_model(self):
-        """Dynamically generates a state vector model for users to input
-        initial state values.
-
-        Uses un-abbreviated state vector list so users are forced to include
-        units of state vector elements to re-enforce units mindfulness.
-
-        This context is different than the state vector from the state space
-        representation model used to define state vector derivative lists and
-        state transition matrix partials.
-
-        The context here is 'all of what the user needs to input' to process
-        the state space representation models.
-
-        E.g., if atmospheric-density is used, but Cd is not in state space
-        representation, the user still needs to provide Cd, A, and m for models
-        to function.
-        """
-        config = {}
-        state_vector_list = self.dynamics.state_vector_list
-        if "atmospheric-drag" in self.dynamics.perturbations:
-            if (
-                "Cd" not in state_vector_list
-                or "Bstar" not in state_vector_list
-            ):
-                state_vector_list.append("Cd")
-        for item in state_vector_list:
-            for k, v in dynamic_field(item).items():
-                config[k] = v
-        return create_model("DynamicUserInputStateVectorModel", **config)
 
     def convert_ui_state_to_eom_state(self, dynamic_ui_model):
         eom_state_model = self.select_eom_state_model()
