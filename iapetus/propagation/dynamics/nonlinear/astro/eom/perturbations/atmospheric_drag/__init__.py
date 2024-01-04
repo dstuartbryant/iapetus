@@ -66,19 +66,21 @@ class AtmosphericPerturbation(Perturbation):
             )
         )
         if self.partials_flag:
-            output.partials = partials(
-                pc.vreli,
-                pc.vrelj,
-                pc.vrelk,
-                pc.vrel,
-                s.A,
-                s.m,
-                d.rho,
-                s.Bstar,
-                d.partials.drho_dpi,
-                d.partials.drho_dpj,
-                d.partials.drho_dpk,
-                self.Bstar_flag,
-                self.Cd_flag,
-            )
+            partials_kwargs = {
+                "vreli": pc.vreli,
+                "vrelj": pc.vrelj,
+                "vrelk": pc.vrelk,
+                "vrel": pc.vrel,
+                "rho": d.rho,
+                "Bstar": s.Bstar,
+                "drho_dpi": d.partials.drho_dpi,
+                "drho_dpj": d.partials.drho_dpj,
+                "drho_dpk": d.partials.drho_dpk,
+                "Bstar_flag": self.Bstar_flag,
+                "Cd_flag": self.Cd_flag,
+            }
+            if self.Cd_flag:
+                partials_kwargs["A"] = s.A
+                partials_kwargs["m"] = s.m
+            output.partials = partials(**partials_kwargs)
         return output

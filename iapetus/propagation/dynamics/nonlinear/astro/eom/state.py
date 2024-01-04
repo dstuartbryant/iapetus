@@ -22,9 +22,13 @@ class TwoBodyWithoutStm:
 class TwoBodyWithStm(TwoBodyWithoutStm):
     """Two body state in EOM context with STM computations."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.p5 = self.p**5
+    _p5 = None
+
+    @property
+    def p5(self):
+        if isinstance(self._p5, type(None)):
+            self._p5 = self.p**5
+        return self._p5
 
 
 class TwoBodyDragWithoutStm(TwoBodyWithoutStm):

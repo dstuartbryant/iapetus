@@ -147,6 +147,9 @@ class Astrodynamics(BaseModel):
         if "Cd" in self.state_vector:
             sv_list += ["Cd"]
 
+        if "Bstar" in self.state_vector:
+            sv_list += ["Bstar"]
+
         return sv_list
 
     def _state_variable_abbreviations_map(self):
@@ -216,6 +219,9 @@ class Astrodynamics(BaseModel):
         if "Cd" in self.state_vector:
             sv_list += ["Cd_rate"]
 
+        if "Bstar" in self.state_vector:
+            sv_list += ["Bstar_rate"]
+
         return sv_list
 
     def form_abbreviated_state_vector_derivative_list(self):
@@ -229,7 +235,7 @@ class Astrodynamics(BaseModel):
         pdm_map_list = []
         for idx, dvar in enumerate(self.abbrv_state_vector_derivative_list):
             for jdx, var in enumerate(self.abbrv_state_vector_list):
-                pdm_map_list.append(("d{dvar}_d{var}", idx, jdx))
+                pdm_map_list.append((f"d{dvar}_d{var}", idx, jdx))
 
         return pdm_map_list
 
@@ -295,7 +301,7 @@ class StateContextManagerFactory:
         if "atmospheric-drag" in self.dynamics.perturbations:
             if (
                 "Cd" not in state_vector_list
-                or "Bstar" not in state_vector_list
+                and "Bstar" not in state_vector_list
             ):
                 state_vector_list.append("Cd")
         for item in state_vector_list:
@@ -478,23 +484,19 @@ def generate_state_only_derviative_fcn(
     x_list: List[str],
     xdot_list: List[str],
     eom: Eom,
-    eom_state_model: Union[TwoBodyState, TwoBodyDragState],
-    extras_model: Optional[extras.AtmosphericDragExtras] = None,
+    state_context_manager: object,
 ):
     def der(t, y):
-        print(f"\nY: {y}\n")
-        # Place incoming state y into appropriate container for EOM processing
-        state_kwargs = {}
-        for idx, item in enumerate(x_list):
-            state_kwargs[item] = y[idx]
-        if extras_model:
-            for k_extra, v_extra in extras_model():
-                state_kwargs[k_extra] = v_extra
-        print(f"\nstate_kwargs: {state_kwargs}\n")
-        y_modeled = eom_state_model(**state_kwargs)
+        # print(f"y: {y}")
+        # Switch to EomContext state model
+        y_modeled = state_context_manager.derivative_fcn_to_eom_context(y)
+        # print(f"y_modeled: {y_modeled}")
 
         # EOM computations
-        accels, parts = eom(y_modeled)
+        accels, _ = eom(y_modeled)
+
+        # print(f"xdot_list: {xdot_list}")
+        # raise ValueError("Debug error for stopping iterations.")
 
         # Assemble ydot output
         ydot = []
@@ -503,7 +505,10 @@ def generate_state_only_derviative_fcn(
                 ydot.append(y[x_list.index(xdot)])
             else:
                 try:
-                    ydot.append(accels(xdot))
+                    if xdot in ["Cd_rate", "Bstar_rate"]:
+                        ydot.append(0)
+                    else:
+                        ydot.append(accels(xdot))
                 except Exception as exc:
                     raise DerivativeFunctionError(
                         f"Unexpected error in derivative function: "
@@ -519,8 +524,7 @@ def generate_state_and_stm_derivative_fcn(
     xdot_list: List[str],
     partials_map: List[Tuple],
     eom: Eom,
-    eom_state_model: Union[TwoBodyState, TwoBodyDragState],
-    extras_model: Optional[extras.AtmosphericDragExtras] = None,
+    state_context_manager: object,
 ):
     def der(t, y):
         # Reshape y and stm
@@ -531,14 +535,10 @@ def generate_state_and_stm_derivative_fcn(
         for idx, item in enumerate(partials_map):
             phi[item[1], item[2]] = y_stm[idx]
 
-        # Place incoming state y into appropriate container for EOM processing
-        state_kwargs = {}
-        for idx, item in enumerate(x_list):
-            state_kwargs[item] = y_state[idx]
-        if extras_model:
-            for k_extra, v_extra in extras_model():
-                state_kwargs[k_extra] = v_extra
-        y_modeled = eom_state_model(**state_kwargs)
+        # Switch to EomContext state model
+        y_modeled = state_context_manager.derivative_fcn_to_eom_context(
+            y_state
+        )
 
         # EOM computations
         accels, parts = eom(y_modeled)
@@ -558,7 +558,10 @@ def generate_state_and_stm_derivative_fcn(
                 ydot.append(y[x_list.index(xdot)])
             else:
                 try:
-                    ydot.append(accels(xdot))
+                    if xdot in ["Cd_rate", "Bstar_rate"]:
+                        ydot.append(0)
+                    else:
+                        ydot.append(accels(xdot))
                 except Exception as exc:
                     raise DerivativeFunctionError(
                         f"Unexpected error in derivative function: "
@@ -593,6 +596,9 @@ class PropagatorInit:
     ):
         self.dynamics = dynamics
         self.stm_flag = stm_flag
+        self.state_context_manager_factory = StateContextManagerFactory(
+            dynamics=dynamics, stm_flag=stm_flag
+        )
         self._der = None
         self.Cd_flag = False
         self.Bstar_flag = False
@@ -645,27 +651,26 @@ class PropagatorInit:
             )
 
     def compile_derivative_fcn(
-        self, init_state: Union[TwoBodyState, TwoBodyDragState]
+        self,
+        state_context_manager: object,
     ):
         eom = self.compile_eom()
-        eom_state_model = self.select_eom_state_model()
-        eom_extras_model = self.get_extras_model(init_state=init_state)
+        # eom_state_model = self.select_eom_state_model()
+        # eom_extras_model = self.get_extras_model(init_state=init_state)
         if self.stm_flag:
             return generate_state_and_stm_derivative_fcn(
                 x_list=self.dynamics.abbrv_state_vector_list,
                 xdot_list=self.dynamics.abbrv_state_vector_derivative_list,
                 partials_map=self.dynamics.partial_derivatives_map,
                 eom=eom,
-                eom_state_model=eom_state_model,
-                extras_model=eom_extras_model,
+                state_context_manager=state_context_manager,
             )
         else:
             return generate_state_only_derviative_fcn(
                 x_list=self.dynamics.abbrv_state_vector_list,
                 xdot_list=self.dynamics.abbrv_state_vector_derivative_list,
                 eom=eom,
-                eom_state_model=eom_state_model,
-                extras_model=eom_extras_model,
+                state_context_manager=state_context_manager,
             )
 
     def convert_ui_state_to_eom_state(self, dynamic_ui_model):
@@ -682,6 +687,6 @@ class PropagatorInit:
     #         self._der = self.compile_derivative_fcn()
     #     return self._der
 
-    def update_der(self, init_state: Union[TwoBodyState, TwoBodyDragState]):
-        self._der = self.compile_derivative_fcn(init_state)
+    def update_der(self, state_context_manager: object):
+        self._der = self.compile_derivative_fcn(state_context_manager)
         return self._der
