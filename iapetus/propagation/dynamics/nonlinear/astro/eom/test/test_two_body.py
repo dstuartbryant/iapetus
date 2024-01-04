@@ -8,8 +8,8 @@ from iapetus.propagation.dynamics.nonlinear.astro.eom.payloads import (
 from iapetus.propagation.dynamics.nonlinear.astro.eom.two_body import TwoBody
 
 
-def test_accelerations(sat_state_1, earth_params):
-    ss1 = sat_state_1
+def test_accelerations(state_two_body_without_stm, earth_params):
+    ss1 = state_two_body_without_stm
     tbic = TwoBodyInitConfig(mu=earth_params.mu, partials_flag=False)
     mu = earth_params.mu
     tba = TwoBody(tbic)
@@ -19,8 +19,8 @@ def test_accelerations(sat_state_1, earth_params):
     assert output.accelerations.ak == -mu * ss1.pk / ss1.p3
 
 
-def test_partial_derivatives(sat_state_1, earth_params):
-    ss1 = sat_state_1
+def test_partial_derivatives(state_two_body_with_stm, earth_params):
+    ss1 = state_two_body_with_stm
     mu = earth_params.mu
     tbic = TwoBodyInitConfig(mu=earth_params.mu, partials_flag=True)
     tbpd = TwoBody(tbic)

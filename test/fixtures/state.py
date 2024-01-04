@@ -1,23 +1,71 @@
 """State test fixtures."""
 
 
+from copy import deepcopy
+
 import pytest
 
-from iapetus.propagation.dynamics.nonlinear.astro.eom.payloads import (
-    TwoBodyDragState,
-)
+from iapetus.propagation.dynamics.nonlinear.astro.eom import state
+
+# from iapetus.propagation.dynamics.nonlinear.astro.eom.payloads import (
+#     TwoBodyDragState,
+# )
+
+
+PI = 6656356.11057065
+PJ = 1700859.15707779
+PK = 299734.38071253
+VI = -1794.25660717
+VJ = 6353.55570765
+VK = 3792.38315729
+A = (1 / 3) ** 2
+M = 50
+CD = 2.0
+BSTAR = 0.5 * CD * A / M
+
+two_body_input_base = {
+    "pi": PI,
+    "pj": PJ,
+    "pk": PK,
+    "vi": VI,
+    "vj": VJ,
+    "vk": VK,
+}
+
+two_body_drag_input = deepcopy(two_body_input_base)
+two_body_drag_input["A"] = A
+two_body_drag_input["Cd"] = CD
+two_body_drag_input["m"] = M
+
+two_body_drag_Bstar_input = deepcopy(two_body_input_base)
+two_body_drag_Bstar_input["Bstar"] = BSTAR
 
 
 @pytest.fixture
-def sat_state_1():
-    yield TwoBodyDragState(
-        pi=6656356.11057065,  # [m]
-        pj=1700859.15707779,  # [m]
-        pk=299734.38071253,  # [m]
-        vi=-1794.25660717,  # [mps]
-        vj=6353.55570765,  # [mps]
-        vk=3792.38315729,  # [mps]
-        A=(1 / 3) ** 2,  # [m^2]
-        m=50,  # [kg]
-        Cd=2.0,  # [unitless]
-    )
+def state_two_body_without_stm():
+    yield state.TwoBodyWithoutStm(**two_body_input_base)
+
+
+@pytest.fixture
+def state_two_body_with_stm():
+    yield state.TwoBodyWithStm(**two_body_input_base)
+
+
+@pytest.fixture
+def state_two_body_drag_without_stm():
+    yield state.TwoBodyDragWithoutStm(**two_body_drag_input)
+
+
+@pytest.fixture
+def state_two_body_drag_with_stm():
+    yield state.TwoBodyDragWithStm(**two_body_drag_input)
+
+
+@pytest.fixture
+def state_two_body_drag_cd_with_stm():
+    yield state.TwoBodyDragCdWithStm(**two_body_drag_input)
+
+
+@pytest.fixture
+def state_two_body_drag_bstar_with_stm():
+    yield state.TwoBodyDragBstarWithStm(**two_body_drag_Bstar_input)

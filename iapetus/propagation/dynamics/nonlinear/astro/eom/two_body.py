@@ -1,10 +1,12 @@
 """Two-body equations of motion module."""
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
-from .payloads.call_states import TwoBodyState
 from .payloads.configs import TwoBodyInitConfig
+
+# from .payloads.call_states import TwoBodyState
+from .state import TwoBodyWithoutStm, TwoBodyWithStm
 
 
 @dataclass
@@ -91,7 +93,9 @@ class TwoBody:
     ) -> float:
         return 3 * p_comp_1 * p_comp_2 * self.mu / p5
 
-    def __call__(self, s: TwoBodyState) -> TwoBodyOutput:
+    def __call__(
+        self, s: Union[TwoBodyWithStm, TwoBodyWithoutStm]
+    ) -> TwoBodyOutput:
         output = TwoBodyOutput(
             accelerations=TwoBodyAccelerations(
                 self._acceleration(s.pi, s.p3),

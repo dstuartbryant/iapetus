@@ -59,6 +59,9 @@ class AtmosphericDragPartials(PerturbedPartials):
     dai_dBstar: Optional[float] = None
     daj_dBstar: Optional[float] = None
     dak_dBstar: Optional[float] = None
+    dai_dCd: Optional[float] = None
+    daj_dCd: Optional[float] = None
+    dak_dCd: Optional[float] = None
 
 
 @dataclass

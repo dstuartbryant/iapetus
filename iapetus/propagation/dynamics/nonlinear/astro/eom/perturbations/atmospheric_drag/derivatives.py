@@ -89,8 +89,8 @@ def partials(
         output.dak_dBstar = -coeff * vrelk
     if Cd_flag:
         coeff = 0.5 * A / m * rho * vrel
-        output.dai_dBstar = -coeff * vreli
-        output.daj_dBstar = -coeff * vrelj
-        output.dak_dBstar = -coeff * vrelk
+        output.dai_dCd = -coeff * vreli
+        output.daj_dCd = -coeff * vrelj
+        output.dak_dCd = -coeff * vrelk
 
     return output

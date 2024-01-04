@@ -2,18 +2,34 @@
 """
 
 from dataclasses import dataclass
+from typing import Union
 
 import numpy as np
 
 from iapetus.propagation.dynamics.nonlinear.astro.constants import ROTATION
 
-from ...payloads import AtmosphericDragInitConfig, TwoBodyDragState
+from ...payloads import AtmosphericDragInitConfig
+from ...state import (
+    TwoBodyDragBstarWithoutStm,
+    TwoBodyDragBstarWithStm,
+    TwoBodyDragCdWithoutStm,
+    TwoBodyDragCdWithStm,
+    TwoBodyDragWithoutStm,
+    TwoBodyDragWithStm,
+)
 from ..models import AtmosphericDragPerturbedOutput, Perturbation
 from .accelerations import accelerations
 from .atmospheric_density import ExponentialAtmosphericModel
 from .derivatives import partials
 
-# from typing import Optional
+STATE_TYPES = Union[
+    TwoBodyDragBstarWithoutStm,
+    TwoBodyDragBstarWithStm,
+    TwoBodyDragCdWithoutStm,
+    TwoBodyDragCdWithStm,
+    TwoBodyDragWithoutStm,
+    TwoBodyDragWithStm,
+]
 
 
 OMEGA_EARTH = ROTATION["Earth"]
@@ -45,14 +61,14 @@ class AtmosphericPerturbation(Perturbation):
         self.Cd_flag = c.Cd_flag
         self.density_model = ExponentialAtmosphericModel(c.partials_flag)
 
-    def pre_compute(self, s: TwoBodyDragState):
+    def pre_compute(self, s: STATE_TYPES):
         return PreComputed(
             vreli=s.vi + self.w * s.pj,
             vrelj=s.vj - self.w * s.pi,
             vrelk=s.vk,
         )
 
-    def __call__(self, s: TwoBodyDragState) -> AtmosphericDragPerturbedOutput:
+    def __call__(self, s: STATE_TYPES) -> AtmosphericDragPerturbedOutput:
         pc = self.pre_compute(s)
         d = self.density_model(s.pi, s.pj, s.pk, s.p)
         output = AtmosphericDragPerturbedOutput(
