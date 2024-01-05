@@ -1,10 +1,10 @@
 """Astrodynamics equations of motion (EOM) module."""
 
-from typing import List, Union
+from typing import List
 
-from .payloads.call_states import TwoBodyDragState, TwoBodyState
 from .payloads.ui import configure_eom_from_user_config
 from .perturbations.models import Perturbation, PerturbedOutput
+from .state import STATE_TYPES
 from .two_body import TwoBody
 
 
@@ -39,7 +39,7 @@ class Eom:
         self.eom_two_body = eom_two_body
         self.eom_perturbations = eom_perturbations
 
-    def __call__(self, s: Union[TwoBodyState, TwoBodyDragState]):
+    def __call__(self, s: STATE_TYPES):
         two_body_output = self.eom_two_body(s)
         perturbations_output = [x(s) for x in self.eom_perturbations]
 

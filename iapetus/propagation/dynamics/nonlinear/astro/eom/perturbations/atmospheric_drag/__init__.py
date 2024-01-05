@@ -2,35 +2,17 @@
 """
 
 from dataclasses import dataclass
-from typing import Union
 
 import numpy as np
 
 from iapetus.propagation.dynamics.nonlinear.astro.constants import ROTATION
 
 from ...payloads import AtmosphericDragInitConfig
-from ...state import (
-    TwoBodyDragBstarWithoutStm,
-    TwoBodyDragBstarWithStm,
-    TwoBodyDragCdWithoutStm,
-    TwoBodyDragCdWithStm,
-    TwoBodyDragWithoutStm,
-    TwoBodyDragWithStm,
-)
+from ...state import STATE_TYPES
 from ..models import AtmosphericDragPerturbedOutput, Perturbation
 from .accelerations import accelerations
 from .atmospheric_density import ExponentialAtmosphericModel
 from .derivatives import partials
-
-STATE_TYPES = Union[
-    TwoBodyDragBstarWithoutStm,
-    TwoBodyDragBstarWithStm,
-    TwoBodyDragCdWithoutStm,
-    TwoBodyDragCdWithStm,
-    TwoBodyDragWithoutStm,
-    TwoBodyDragWithStm,
-]
-
 
 OMEGA_EARTH = ROTATION["Earth"]
 

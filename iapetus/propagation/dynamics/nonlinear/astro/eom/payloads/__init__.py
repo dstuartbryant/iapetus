@@ -7,5 +7,4 @@ to minimize code.
 """
 
 
-from .call_states import TwoBodyDragState, TwoBodyState
 from .configs import AtmosphericDragInitConfig, TwoBodyInitConfig

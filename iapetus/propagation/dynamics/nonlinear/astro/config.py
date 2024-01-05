@@ -1,7 +1,7 @@
 """Astrodynamics (dynamics) configuration interface module."""
 
 import inspect
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 import numpy as np
 from pydantic import BaseModel, create_model, root_validator, validator
@@ -10,8 +10,6 @@ from .constants import MU
 from .eom import Eom
 from .eom import configure as eom_configure
 from .eom import state
-from .eom.payloads import extras
-from .eom.payloads.call_states import TwoBodyDragState, TwoBodyState
 from .eom.payloads.ui import IMPLEMENTED_PERTURBATION_NAMES, PERTURBATION_NAMES
 
 UI_STATE_VECTOR_OPTIONS = ["translational", "rotational", "Bstar", "Cd"]
@@ -274,9 +272,8 @@ class StateContextManagerFactory:
         self.stm_flag = stm_flag
         self._ui_input_init_context_model = None
         self._abbrv_ui_input_init_context_model = None
-        # self._derivative_function_context_model = None
         self._eom_context_model = None
-        self._ui_output_context_model = None
+        self._ui_output_context_model = NotImplemented
 
     def generate_ui_state_vector_model(self):
         """Dynamically generates a state vector model for users to input
@@ -348,7 +345,7 @@ class StateContextManagerFactory:
 
         return ui_input_to_derivative_fcn_context
 
-    def generate_eom_context_model(self):
+    def select_eom_context_model(self):
         if "atmospheric-drag" not in self.dynamics.perturbations:
             if not self.stm_flag:
                 return state.TwoBodyWithoutStm
@@ -472,7 +469,7 @@ class StateContextManagerFactory:
     @property
     def eom_context_model(self):
         if isinstance(self._eom_context_model, type(None)):
-            self._eom_context_model = self.generate_eom_context_model()
+            self._eom_context_model = self.select_eom_context_model()
         return self._eom_context_model
 
 
@@ -584,7 +581,7 @@ def generate_state_and_stm_derivative_fcn(
 
 class PropagatorInit:
     """Produces a propagator to later be instantiated with timing
-    parameters.
+    parameters and an initial state.
 
     This includes dynamically generating derivative functions for integrators.
     """
@@ -634,29 +631,11 @@ class PropagatorInit:
             user_config=user_config, perturbations=self.dynamics.perturbations
         )
 
-    def select_eom_state_model(self):
-        if "atmospheric-drag" in self.dynamics.perturbations:
-            return TwoBodyDragState
-        else:
-            return TwoBodyState
-
-    def get_extras_model(
-        self, init_state: Union[TwoBodyState, TwoBodyDragState]
-    ):
-        if "atmospheric-drag" in self.dynamics.perturbations:
-            return extras.AtmosphericDragExtras(
-                init_state=init_state,
-                Cd_flag=self.Cd_flag,
-                Bstar_flag=self.Bstar_flag,
-            )
-
     def compile_derivative_fcn(
         self,
         state_context_manager: object,
     ):
         eom = self.compile_eom()
-        # eom_state_model = self.select_eom_state_model()
-        # eom_extras_model = self.get_extras_model(init_state=init_state)
         if self.stm_flag:
             return generate_state_and_stm_derivative_fcn(
                 x_list=self.dynamics.abbrv_state_vector_list,
@@ -672,20 +651,6 @@ class PropagatorInit:
                 eom=eom,
                 state_context_manager=state_context_manager,
             )
-
-    def convert_ui_state_to_eom_state(self, dynamic_ui_model):
-        eom_state_model = self.select_eom_state_model()
-        kwargs = {}
-        for k in dynamic_ui_model.__fields__.keys():
-            new_k = self.dynamics.state_abbrv_map[k]
-            kwargs[new_k] = getattr(dynamic_ui_model, k)
-        return eom_state_model(**kwargs)
-
-    # @property
-    # def der(self):
-    #     if isinstance(self._der, type(None)):
-    #         self._der = self.compile_derivative_fcn()
-    #     return self._der
 
     def update_der(self, state_context_manager: object):
         self._der = self.compile_derivative_fcn(state_context_manager)

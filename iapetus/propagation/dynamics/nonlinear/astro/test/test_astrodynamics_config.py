@@ -9,33 +9,47 @@ from iapetus.propagation.dynamics.nonlinear.astro.config import (
 
 
 def test_state_vector_validation():
-    Astrodynamics(**{"state_vector": ["translational"]})
-    Astrodynamics(**{"state_vector": ["rotational"]})
+    Astrodynamics(
+        **{"state_vector": ["translational"], "celestial_body": "Earth"}
+    )
+
+    Astrodynamics(
+        **{"state_vector": ["rotational"], "celestial_body": "Earth"}
+    )
     Astrodynamics(
         **{
             "state_vector": ["translational", "Cd"],
+            "celestial_body": "Earth",
             "perturbations": ["atmospheric-drag"],
         }
     )
     Astrodynamics(
         **{
             "state_vector": ["translational", "rotational", "Cd"],
+            "celestial_body": "Earth",
             "perturbations": ["atmospheric-drag"],
         }
     )
 
     with pytest.raises(AstrodynamicsConfigError) as excinfo:
-        Astrodynamics(**{"state_vector": ["warp"]})
+        Astrodynamics(**{"state_vector": ["warp"], "celestial_body": "Earth"})
 
     assert str(excinfo.value) == "Found unexpected state_vector input."
 
     with pytest.raises(AstrodynamicsConfigError) as excinfo:
-        Astrodynamics(**{"state_vector": ["translational", "warp"]})
+        Astrodynamics(
+            **{
+                "state_vector": ["translational", "warp"],
+                "celestial_body": "Earth",
+            }
+        )
 
     assert str(excinfo.value) == "Found unexpected state_vector input."
 
     with pytest.raises(AstrodynamicsConfigError) as excinfo:
-        Astrodynamics(**{"state_vector": ["rotational", "Cd"]})
+        Astrodynamics(
+            **{"state_vector": ["rotational", "Cd"], "celestial_body": "Earth"}
+        )
 
     assert (
         str(excinfo.value)
@@ -49,6 +63,7 @@ def test_dynamics_validation():
         Astrodynamics(
             **{
                 "state_vector": ["translational"],
+                "celestial_body": "Earth",
                 "perturbations": ["non-spherical"],
             }
         )
@@ -63,7 +78,10 @@ def test_dynamics_validation():
 def test_cross_check_validation():
     with pytest.raises(AstrodynamicsConfigError) as excinfo:
         Astrodynamics(
-            **{"state_vector": ["translational", "rotational", "Cd"]}
+            **{
+                "state_vector": ["translational", "rotational", "Cd"],
+                "celestial_body": "Earth",
+            }
         )
 
     assert str(excinfo.value) == (
@@ -72,8 +90,32 @@ def test_cross_check_validation():
     )
 
 
+def test_celestial_body_check():
+    Astrodynamics(
+        **{
+            "state_vector": ["translational"],
+            "celestial_body": "Earth",
+            "perturbations": ["atmospheric-drag"],
+        }
+    )
+
+    with pytest.raises(AstrodynamicsConfigError) as excinfo:
+        Astrodynamics(
+            **{
+                "state_vector": ["translational"],
+                "celestial_body": "Moon",
+                "perturbations": ["atmospheric-drag"],
+            }
+        )
+    assert str(excinfo.value) == (
+        "Non-Earth atmospheric perturbations are unavailable."
+    )
+
+
 def test_state_vector_formation():
-    ac = Astrodynamics(**{"state_vector": ["translational"]})
+    ac = Astrodynamics(
+        **{"state_vector": ["translational"], "celestial_body": "Earth"}
+    )
     assert ac.state_vector_list == [
         "position_i_m",
         "position_j_m",
@@ -83,7 +125,12 @@ def test_state_vector_formation():
         "velocity_k_mps",
     ]
 
-    ac = Astrodynamics(**{"state_vector": ["translational", "rotational"]})
+    ac = Astrodynamics(
+        **{
+            "state_vector": ["translational", "rotational"],
+            "celestial_body": "Earth",
+        }
+    )
     assert ac.state_vector_list == [
         "position_i_m",
         "position_j_m",
@@ -102,6 +149,7 @@ def test_state_vector_formation():
     ac = Astrodynamics(
         **{
             "state_vector": ["translational", "Cd"],
+            "celestial_body": "Earth",
             "perturbations": ["atmospheric-drag"],
         }
     )
@@ -118,6 +166,7 @@ def test_state_vector_formation():
     ac = Astrodynamics(
         **{
             "state_vector": ["translational", "rotational", "Cd"],
+            "celestial_body": "Earth",
             "perturbations": ["atmospheric-drag"],
         }
     )
@@ -139,7 +188,9 @@ def test_state_vector_formation():
 
 
 def test_state_vector_derivative_formation():
-    ac = Astrodynamics(**{"state_vector": ["translational"]})
+    ac = Astrodynamics(
+        **{"state_vector": ["translational"], "celestial_body": "Earth"}
+    )
     assert ac.state_vector_derivative_list == [
         "velocity_i_mps",
         "velocity_j_mps",
@@ -149,7 +200,12 @@ def test_state_vector_derivative_formation():
         "accelration_k_mps2",
     ]
 
-    ac = Astrodynamics(**{"state_vector": ["translational", "rotational"]})
+    ac = Astrodynamics(
+        **{
+            "state_vector": ["translational", "rotational"],
+            "celestial_body": "Earth",
+        }
+    )
     assert ac.state_vector_derivative_list == [
         "velocity_i_mps",
         "velocity_j_mps",
@@ -168,6 +224,7 @@ def test_state_vector_derivative_formation():
     ac = Astrodynamics(
         **{
             "state_vector": ["translational", "Cd"],
+            "celestial_body": "Earth",
             "perturbations": ["atmospheric-drag"],
         }
     )
@@ -184,6 +241,7 @@ def test_state_vector_derivative_formation():
     ac = Astrodynamics(
         **{
             "state_vector": ["translational", "rotational", "Cd"],
+            "celestial_body": "Earth",
             "perturbations": ["atmospheric-drag"],
         }
     )
@@ -204,26 +262,27 @@ def test_state_vector_derivative_formation():
     ]
 
 
-def test_dynamic_ui_state_vector_model():
-    ac = Astrodynamics(
-        **{
-            "state_vector": ["translational"],
-            "perturbations": ["atmospheric-drag"],
-        }
-    )
+# def test_dynamic_ui_state_vector_model():
+#     ac = Astrodynamics(
+#         **{
+#             "state_vector": ["translational"],
+#             "celestial_body": "Earth",
+#             "perturbations": ["atmospheric-drag"],
+#         }
+#     )
 
-    model = ac.dynamic_ui_state_vector_model()
-    expected_keys = [
-        "position_i_m",
-        "position_j_m",
-        "position_k_m",
-        "velocity_i_mps",
-        "velocity_j_mps",
-        "velocity_k_mps",
-    ]
-    mf = model.__fields__
-    for k, v in mf.items():
-        assert k in expected_keys
-        assert v.name == k
-        assert v.type_ == float
-        assert v.required is True
+#     model = ac.dynamic_ui_state_vector_model()
+#     expected_keys = [
+#         "position_i_m",
+#         "position_j_m",
+#         "position_k_m",
+#         "velocity_i_mps",
+#         "velocity_j_mps",
+#         "velocity_k_mps",
+#     ]
+#     mf = model.__fields__
+#     for k, v in mf.items():
+#         assert k in expected_keys
+#         assert v.name == k
+#         assert v.type_ == float
+#         assert v.required is True

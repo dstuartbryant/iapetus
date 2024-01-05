@@ -40,6 +40,23 @@ two_body_drag_input["m"] = M
 two_body_drag_Bstar_input = deepcopy(two_body_input_base)
 two_body_drag_Bstar_input["Bstar"] = BSTAR
 
+ui_two_body_input_base = {
+    "position_i_m": PI,
+    "position_j_m": PJ,
+    "position_k_m": PK,
+    "velocity_i_mps": VI,
+    "velocity_j_mps": VJ,
+    "velocity_k_mps": VK,
+}
+
+ui_two_body_drag_input = deepcopy(ui_two_body_input_base)
+ui_two_body_drag_input["A_m2"] = A
+ui_two_body_drag_input["Cd"] = CD
+ui_two_body_drag_input["m_kg"] = M
+
+ui_two_body_drag_Bstar_input = deepcopy(ui_two_body_input_base)
+ui_two_body_drag_Bstar_input["Bstar"] = BSTAR
+
 
 @pytest.fixture
 def state_two_body_without_stm():
@@ -69,3 +86,18 @@ def state_two_body_drag_cd_with_stm():
 @pytest.fixture
 def state_two_body_drag_bstar_with_stm():
     yield state.TwoBodyDragBstarWithStm(**two_body_drag_Bstar_input)
+
+
+@pytest.fixture
+def ui_state_two_body():
+    yield ui_two_body_input_base
+
+
+@pytest.fixture
+def ui_state_two_body_drag():
+    yield ui_two_body_drag_input
+
+
+@pytest.fixture
+def ui_state_two_body_drag_Bstar():
+    yield ui_two_body_drag_Bstar_input

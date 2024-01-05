@@ -5,40 +5,30 @@ import pytest
 from iapetus.propagation.dynamics.nonlinear.astro.eom import (
     EomError,
     configure,
+    perturbations,
 )
 from iapetus.propagation.dynamics.nonlinear.astro.eom.payloads import (
     AtmosphericDragInitConfig,
     TwoBodyInitConfig,
 )
-from iapetus.propagation.dynamics.nonlinear.astro.eom.payloads.call_states import (
-    TwoBodyDragState,
-    TwoBodyState,
-)
-from iapetus.propagation.dynamics.nonlinear.astro.eom.perturbations.atmospheric_drag import (
-    AtmosphericPerturbation,
-)
 from iapetus.propagation.dynamics.nonlinear.astro.eom.two_body import TwoBody
+
+AtmosphericPerturbation = perturbations.AtmosphericPerturbation
 
 
 class TestTwoBody:
-    s = TwoBodyState(
-        pi=6656356.11057065,  # [m]
-        pj=1700859.15707779,  # [m]
-        pk=299734.38071253,  # [m]
-        vi=-1794.25660717,  # [mps]
-        vj=6353.55570765,  # [mps]
-        vk=3792.38315729,  # [mps]
-    )
-
-    def test_accelerations_only(self, earth_params):
+    def test_accelerations_only(
+        self, state_two_body_without_stm, earth_params
+    ):
+        s = state_two_body_without_stm
         mu = earth_params.mu
         ui_config = {"mu": mu, "partials_flag": False}
         eom = configure(ui_config, [])
         tbic = TwoBodyInitConfig(mu=earth_params.mu, partials_flag=False)
         tba = TwoBody(tbic)
 
-        accels, parts = eom(self.s)
-        output = tba(self.s)
+        accels, parts = eom(s)
+        output = tba(s)
 
         assert output.accelerations.ai == accels("ai")
         assert output.accelerations.aj == accels("aj")
@@ -63,15 +53,16 @@ class TestTwoBody:
         assert parts("dak_dpj") == 0
         assert parts("dak_dpk") == 0
 
-    def test_partials(self, earth_params):
+    def test_partials(self, state_two_body_with_stm, earth_params):
+        s = state_two_body_with_stm
         mu = earth_params.mu
         ui_config = {"mu": mu, "partials_flag": True}
         eom = configure(ui_config, [])
         tbic = TwoBodyInitConfig(mu=earth_params.mu, partials_flag=True)
         tba = TwoBody(tbic)
 
-        accels, parts = eom(self.s)
-        output = tba(self.s)
+        accels, parts = eom(s)
+        output = tba(s)
 
         assert parts("dvi_dpi") == output.partials.dvi_dpi
         assert parts("dvi_dpj") == output.partials.dvi_dpj
@@ -94,28 +85,14 @@ class TestTwoBody:
 
 
 class TestTwoBodyDrag:
-    s_2body = TwoBodyState(
-        pi=6656356.11057065,  # [m]
-        pj=1700859.15707779,  # [m]
-        pk=299734.38071253,  # [m]
-        vi=-1794.25660717,  # [mps]
-        vj=6353.55570765,  # [mps]
-        vk=3792.38315729,  # [mps]
-    )
-
-    s_drag = TwoBodyDragState(
-        pi=6656356.11057065,  # [m]
-        pj=1700859.15707779,  # [m]
-        pk=299734.38071253,  # [m]
-        vi=-1794.25660717,  # [mps]
-        vj=6353.55570765,  # [mps]
-        vk=3792.38315729,  # [mps]
-        A=(1 / 3) ** 2,  # [m^2]
-        m=50,  # [kg]
-        Cd=2.0,  # [unitless]
-    )
-
-    def test_accelerations_only(self, earth_params):
+    def test_accelerations_only(
+        self,
+        state_two_body_without_stm,
+        state_two_body_drag_without_stm,
+        earth_params,
+    ):
+        s_2body = state_two_body_without_stm
+        s_drag = state_two_body_drag_without_stm
         mu = earth_params.mu
         ui_config = {
             "mu": mu,
@@ -131,9 +108,9 @@ class TestTwoBodyDrag:
         )
         ap = AtmosphericPerturbation(adic)
 
-        accels, parts = eom(self.s_drag)
-        output1 = tba(self.s_2body)
-        output2 = ap(self.s_drag)
+        accels, parts = eom(s_drag)
+        output1 = tba(s_2body)
+        output2 = ap(s_drag)
 
         assert output1.accelerations.ai + output2.accelerations.ai == accels(
             "ai"
@@ -164,7 +141,14 @@ class TestTwoBodyDrag:
         assert parts("dak_dpj") == 0
         assert parts("dak_dpk") == 0
 
-    def test_partials_no_bstar_no_Cd(self, earth_params):
+    def test_partials_no_bstar_no_Cd(
+        self,
+        state_two_body_with_stm,
+        state_two_body_drag_with_stm,
+        earth_params,
+    ):
+        s_2body = state_two_body_with_stm
+        s_drag = state_two_body_drag_with_stm
         mu = earth_params.mu
         ui_config = {
             "mu": mu,
@@ -180,9 +164,9 @@ class TestTwoBodyDrag:
         )
         ap = AtmosphericPerturbation(adic)
 
-        accels, parts = eom(self.s_drag)
-        output1 = tba(self.s_2body)
-        output2 = ap(self.s_drag)
+        accels, parts = eom(s_drag)
+        output1 = tba(s_2body)
+        output2 = ap(s_drag)
 
         partials1 = output1.partials
         partials2 = output2.partials

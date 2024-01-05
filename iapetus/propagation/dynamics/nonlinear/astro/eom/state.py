@@ -1,5 +1,7 @@
 """Equations of motion (EOM) state contexts module."""
 
+from typing import Union
+
 import numpy as np
 
 
@@ -131,3 +133,13 @@ class TwoBodyDragBstarWithStm(TwoBodyWithStm):
     ):
         super().__init__(pi, pj, pk, vi, vj, vk)
         self.Bstar = Bstar
+
+
+STATE_TYPES = Union[
+    TwoBodyDragBstarWithoutStm,
+    TwoBodyDragBstarWithStm,
+    TwoBodyDragCdWithoutStm,
+    TwoBodyDragCdWithStm,
+    TwoBodyDragWithoutStm,
+    TwoBodyDragWithStm,
+]
