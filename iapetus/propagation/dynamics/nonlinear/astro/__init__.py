@@ -14,3 +14,6 @@ class AstroInit(BaseModel):
     stm_flag: bool
     integrator: str
     perturbations: Optional[List[str]] = []
+
+
+__all__ = [Astrodynamics, AstroPropIniit, AstroInit]

@@ -477,25 +477,69 @@ class DerivativeFunctionError(Exception):
     pass
 
 
-def generate_state_only_derviative_fcn(
+def derivative_function_factory(
     x_list: List[str],
     xdot_list: List[str],
     eom: Eom,
     state_context_manager: object,
+    stm_flag: bool,
+    partials_map: Optional[List[Tuple]] = None,
 ):
-    def der(t, y):
-        # print(f"y: {y}")
-        # Switch to EomContext state model
-        y_modeled = state_context_manager.derivative_fcn_to_eom_context(y)
-        # print(f"y_modeled: {y_modeled}")
+    """Generates a configured derivative function for use with Runge-Kutta
+    integrators.
 
-        # EOM computations
-        accels, _ = eom(y_modeled)
+    Args:
+        x_list (List[str]): Abbreviated list of state vector elements sourced
+            from an instantiated Astrodynamics class
+        x_dot_list (List[str]): Abbreviated list of state vector derivative
+            elements sourced from an instantiated Astrodynamics class
+        eom (Eom): An instantiated equations of motion (EOM) object
+        state_context_manager (StateContextManager): Instantiated state context
+            manager class that handles state context switching
+        stm_flag (bool): If True, indicates the need to perform state
+            transition matrix (STM) computations
+        partials_map (Optional[List[Tuple]]): Provided when stm_flag == True;
+            used to map partial derivatives output for A matrix used in
+            Phi_dot = A @ Phi computation.
 
-        # print(f"xdot_list: {xdot_list}")
-        # raise ValueError("Debug error for stopping iterations.")
+    Returns:
+        der (method): derivative function method for use with Runge-Kutta
+            integrators
 
-        # Assemble ydot output
+    """
+    if stm_flag and not partials_map:
+        raise DerivativeFunctionError(
+            "Must provide `partials_map` input when `stm_flag` is set to True."
+        )
+
+    def parse_input_state_vector(y, n):
+        """Used if stm_flag == True.
+
+        Returns:
+            y_state (np.ndarray): the actual state vector
+            phi (np.ndarray): nxn state transition matrix, n = lenght of state
+                vector
+        """
+        y_state = y[:n]
+        y_stm = y[n:]
+        phi = np.zeros((n, n))
+        for idx, item in enumerate(partials_map):
+            phi[item[1], item[2]] = y_stm[idx]
+        return y_state, phi
+
+    def switch_input_state_vector_to_eom_context(y):
+        return state_context_manager.derivative_fcn_to_eom_context(y)
+
+    def compute_phi_dot(phi, parts, n):
+        # Form A matrix from partials
+        A = np.zeros((n, n))
+        for item in partials_map:
+            A[item[1], item[2]] = parts(item[0])
+
+        # Compute stm derivative
+        return A @ phi
+
+    def assemble_ydot_output(y, accels):
         ydot = []
         for idx, xdot in enumerate(xdot_list):
             if xdot in x_list:
@@ -513,70 +557,64 @@ def generate_state_only_derviative_fcn(
                     )
         return ydot
 
-    return der
-
-
-def generate_state_and_stm_derivative_fcn(
-    x_list: List[str],
-    xdot_list: List[str],
-    partials_map: List[Tuple],
-    eom: Eom,
-    state_context_manager: object,
-):
-    def der(t, y):
-        # Reshape y and stm
-        state_length = len(x_list)
-        y_state = y[:state_length]
-        y_stm = y[state_length:]
-        phi = np.zeros((len(y_state), len(y_state)))
-        for idx, item in enumerate(partials_map):
-            phi[item[1], item[2]] = y_stm[idx]
-
-        # Switch to EomContext state model
-        y_modeled = state_context_manager.derivative_fcn_to_eom_context(
-            y_state
-        )
-
-        # EOM computations
-        accels, parts = eom(y_modeled)
-
-        # Form A matrix from partials
-        A = np.zeros((len(y_state), len(y_state)))
-        for item in partials_map:
-            A[item[1], item[2]] = parts(item[0])
-
-        # Compute stm derivative
-        phi_dot = A @ phi
-
-        # Assemble ydot output
-        ydot = []
-        for idx, xdot in enumerate(xdot_list):
-            if xdot in x_list:
-                ydot.append(y[x_list.index(xdot)])
-            else:
-                try:
-                    if xdot in ["Cd_rate", "Bstar_rate"]:
-                        ydot.append(0)
-                    else:
-                        ydot.append(accels(xdot))
-                except Exception as exc:
-                    raise DerivativeFunctionError(
-                        f"Unexpected error in derivative function: "
-                        f"{str(exc.args[0])}"
-                    )
-        ydot = np.concatenate(
+    def reshape_and_concat_phi_dot_to_ydot(phi_dot, ydot, n):
+        return np.concatenate(
             (
                 ydot,
                 phi_dot.reshape(
-                    len(y_state) ** 2,
+                    n**2,
                 ),
             ),
             axis=0,
         )
 
-        return ydot
+    def der(t, y):
+        """Derivative function used in Runge-Kutta integrator implementation
+        that does not include state transition matrix (STM) computations.
 
-    return der
+        Args:
+            t (float): time in seconds
+            y (np.ndarray): state vector
+
+        Returns:
+            ydot (np.ndarray): state vector derivative
+        """
+        y_modeled = switch_input_state_vector_to_eom_context(y)
+
+        # EOM computations
+        accels, _ = eom(y_modeled)
+
+        return assemble_ydot_output(y, accels)
+
+    def der_stm(t, y):
+        """Derivative function used in Runge-Kutta integrator implementation
+        that includes state transition matrix (STM) computations.
+
+        Args:
+            t (float): time in seconds
+            y (np.ndarray): state vector
+
+        Returns:
+            ydot (np.ndarray): state vector derivative
+        """
+        n = len(x_list)
+        y, phi = parse_input_state_vector(y, n)
+
+        y_modeled = switch_input_state_vector_to_eom_context(y)
+
+        # EOM computations
+        accels, parts = eom(y_modeled)
+
+        phi_dot = compute_phi_dot(phi, parts, n)
+
+        ydot = assemble_ydot_output(y, accels)
+
+        return reshape_and_concat_phi_dot_to_ydot(phi_dot, ydot, n)
+
+    if stm_flag:
+        return der_stm
+    else:
+        return der
 
 
 class PropagatorInit:
@@ -597,8 +635,6 @@ class PropagatorInit:
             dynamics=dynamics, stm_flag=stm_flag
         )
         self._der = None
-        self.Cd_flag = False
-        self.Bstar_flag = False
 
     def compile_eom_init_dict(self) -> dict:
         user_config = {}
@@ -607,22 +643,16 @@ class PropagatorInit:
             user_config["partials_flag"] = True
             if "Bstar" in self.dynamics.state_vector:
                 user_config["Bstar_flag"] = True
-                self.Bstar_flag = True
             else:
                 user_config["Bstar_flag"] = False
-                self.Bstar_flag = False
             if "Cd" in self.dynamics.state_vector:
                 user_config["Cd_flag"] = True
-                self.Cd_flag = True
             else:
                 user_config["Cd_flag"] = False
-                self.Cd_flag = False
         else:
             user_config["partials_flag"] = False
             user_config["Bstar_flag"] = False
-            self.Bstar_flag = False
             user_config["Cd_flag"] = False
-            self.Cd_flag = False
         return user_config
 
     def compile_eom(self) -> Eom:
@@ -636,21 +666,20 @@ class PropagatorInit:
         state_context_manager: object,
     ):
         eom = self.compile_eom()
+        der_factory_kwargs = {
+            "x_list": self.dynamics.abbrv_state_vector_list,
+            "xdot_list": self.dynamics.abbrv_state_vector_derivative_list,
+            "eom": eom,
+            "state_context_manager": state_context_manager,
+            "stm_flag": False,
+        }
         if self.stm_flag:
-            return generate_state_and_stm_derivative_fcn(
-                x_list=self.dynamics.abbrv_state_vector_list,
-                xdot_list=self.dynamics.abbrv_state_vector_derivative_list,
-                partials_map=self.dynamics.partial_derivatives_map,
-                eom=eom,
-                state_context_manager=state_context_manager,
-            )
-        else:
-            return generate_state_only_derviative_fcn(
-                x_list=self.dynamics.abbrv_state_vector_list,
-                xdot_list=self.dynamics.abbrv_state_vector_derivative_list,
-                eom=eom,
-                state_context_manager=state_context_manager,
-            )
+            der_factory_kwargs["stm_flag"] = True
+            der_factory_kwargs[
+                "partials_map"
+            ] = self.dynamics.partial_derivatives_map
+
+        return derivative_function_factory(**der_factory_kwargs)
 
     def update_der(self, state_context_manager: object):
         self._der = self.compile_derivative_fcn(state_context_manager)
