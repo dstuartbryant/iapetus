@@ -335,6 +335,7 @@ class StateContextManagerFactory:
         return populate_abbrv_ui_state_model
 
     def define_ui_input_to_derivative_fcn_method(self):
+        """Returns a method for converting UiContext to DerivativeFcnContext"""
         state_vector_list = self.dynamics.state_vector_list
         ui_input_init_context_model = self.ui_input_init_context_model
 
@@ -344,6 +345,31 @@ class StateContextManagerFactory:
             return np.array([getattr(s, x) for x in state_vector_list])
 
         return ui_input_to_derivative_fcn_context
+
+    def define_derivative_fcn_to_ui_input_method(self):
+        """Returns a method for converting DerivativeFcnContext to UiContext.
+
+        Need to identify UiContext elements that do not exist in
+        DerivativeFcnContext, if any, and rely on user to input them as kwargs
+        """
+        ui_field_keys = list(
+            self.ui_input_init_context_model.__fields__.keys()
+        )
+        sv_list = self.dynamics.state_vector_list
+        keys_not_in_sv_list = list(set(ui_field_keys).difference(set(sv_list)))
+        UiModel = self.ui_input_init_context_model
+
+        def derivative_fcn_to_ui_context(
+            # self,
+            s: np.ndarray,
+            **kwargs,
+        ) -> UiModel:
+            data = {k: s[sv_list.index(k)] for k in sv_list}
+            for k in keys_not_in_sv_list:
+                data[k] = kwargs[k]
+            return UiModel(**data)
+
+        return derivative_fcn_to_ui_context
 
     def select_eom_context_model(self):
         if "atmospheric-drag" not in self.dynamics.perturbations:
@@ -430,6 +456,7 @@ class StateContextManagerFactory:
         method_1 = self.define_ui_input_to_derivative_fcn_method()
         method_2 = self.define_derivative_fcn_to_eom_method()
         method_3 = self.define_populate_abbrv_ui_state_model_method()
+        method_4 = self.define_derivative_fcn_to_ui_input_method()
 
         def constructor(self, ui_init_state: dict):
             self.init_state = ui_init_state_type(**ui_init_state)
@@ -446,6 +473,7 @@ class StateContextManagerFactory:
                 "populate_abbrv_ui_state_model": method_3,
                 "ui_input_to_derivative_fcn_context": method_1,
                 "derivative_fcn_to_eom_context": method_2,
+                "derivative_fcn_to_ui_context": method_4,
             },
         )
         return StateContextManager
@@ -684,3 +712,7 @@ class PropagatorInit:
     def update_der(self, state_context_manager: object):
         self._der = self.compile_derivative_fcn(state_context_manager)
         return self._der
+
+    @property
+    def scmf(self):
+        return self.state_context_manager_factory
