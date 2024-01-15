@@ -1,1 +1,0 @@
-"""State model interfacing module."""

@@ -1,0 +1,992 @@
+[
+    {
+        "timestamp": 0.0,
+        "vector": {
+            "position_i_m": 6656356.110558117,
+            "position_j_m": 1700859.1571221626,
+            "position_k_m": 299734.38073901285,
+            "velocity_i_mps": -1794.2566072266072,
+            "velocity_j_mps": 6353.555707637282,
+            "velocity_k_mps": 3792.3831572860486
+        }
+    },
+    {
+        "timestamp": 60.0,
+        "vector": {
+            "position_i_m": 6534099.555632549,
+            "position_j_m": 2078041.0350913578,
+            "position_k_m": 526449.0151911054,
+            "velocity_i_mps": -2279.463222023246,
+            "velocity_j_mps": 6214.550096743094,
+            "velocity_k_mps": 3761.992271153037
+        }
+    },
+    {
+        "timestamp": 120.0,
+        "vector": {
+            "position_i_m": 6383021.656457003,
+            "position_j_m": 2446056.8553837985,
+            "position_k_m": 750841.529102548,
+            "velocity_i_mps": -2754.6146906268878,
+            "velocity_j_mps": 6048.132854434155,
+            "velocity_k_mps": 3715.007619509825
+        }
+    },
+    {
+        "timestamp": 180.0,
+        "vector": {
+            "position_i_m": 6203788.860071943,
+            "position_j_m": 2803283.353978742,
+            "position_k_m": 971922.1534091714,
+            "velocity_i_mps": -3217.6145834087174,
+            "velocity_j_mps": 5855.038357530596,
+            "velocity_k_mps": 3651.6365743341175
+        }
+    },
+    {
+        "timestamp": 240.0,
+        "vector": {
+            "position_i_m": 5997191.834998598,
+            "position_j_m": 3148144.880035367,
+            "position_k_m": 1188715.7369753679,
+            "velocity_i_mps": -3666.4201396429335,
+            "velocity_j_mps": 5636.118749945502,
+            "velocity_k_mps": 3572.158848122064
+        }
+    },
+    {
+        "timestamp": 300.0,
+        "vector": {
+            "position_i_m": 5764141.97898823,
+            "position_j_m": 3479120.3514008624,
+            "position_k_m": 1400266.051468541,
+            "velocity_i_mps": -4099.05129498265,
+            "velocity_j_mps": 5392.340173164288,
+            "velocity_k_mps": 3476.925255674931
+        }
+    },
+    {
+        "timestamp": 360.0,
+        "vector": {
+            "position_i_m": 5505667.393274624,
+            "position_j_m": 3794749.9687137697,
+            "position_k_m": 1605640.0124620409,
+            "velocity_i_mps": -4513.599430616162,
+            "velocity_j_mps": 5124.778491937239,
+            "velocity_k_mps": 3366.356160971409
+        }
+    },
+    {
+        "timestamp": 420.0,
+        "vector": {
+            "position_i_m": 5222908.341202633,
+            "position_j_m": 4093641.658377144,
+            "position_k_m": 1803931.7980734634,
+            "velocity_i_mps": -4908.235805208069,
+            "velocity_j_mps": 4834.614534280497,
+            "velocity_k_mps": 3240.9396160832134
+        }
+    },
+    {
+        "timestamp": 480.0,
+        "vector": {
+            "position_i_m": 4917112.21139703,
+            "position_j_m": 4374477.215887476,
+            "position_k_m": 1994266.8469042485,
+            "velocity_i_mps": -5281.219632166849,
+            "velocity_j_mps": 4523.128867055215,
+            "velocity_k_mps": 3101.2292004721025
+        }
+    },
+    {
+        "timestamp": 540.0,
+        "vector": {
+            "position_i_m": 4589628.007836064,
+            "position_j_m": 4636018.122344324,
+            "position_k_m": 2175805.7175872377,
+            "velocity_i_mps": -5630.905766387642,
+            "velocity_j_mps": 4191.696130470371,
+            "velocity_k_mps": 2947.8415703477426
+        }
+    },
+    {
+        "timestamp": 600.0,
+        "vector": {
+            "position_i_m": 4241900.391292912,
+            "position_j_m": 4877111.008425929,
+            "position_k_m": 2347747.7928687646,
+            "velocity_i_mps": -5955.751966388392,
+            "velocity_j_mps": 3841.778956821956,
+            "velocity_k_mps": 2781.4537290618223
+        }
+    },
+    {
+        "timestamp": 660.0,
+        "vector": {
+            "position_i_m": 3875463.298596184,
+            "position_j_m": 5096692.741690867,
+            "position_k_m": 2509334.811847937,
+            "velocity_i_mps": -6254.325699680418,
+            "velocity_j_mps": 3474.921500631276,
+            "velocity_k_mps": 2602.8000307584366
+        }
+    },
+    {
+        "timestamp": 720.0,
+        "vector": {
+            "position_i_m": 3491933.168028837,
+            "position_j_m": 5293795.114748079,
+            "position_k_m": 2659854.214764967,
+            "velocity_i_mps": -6525.3104612816605,
+            "velocity_j_mps": 3092.742609068903,
+            "velocity_k_mps": 2412.6689306881644
+        }
+    },
+    {
+        "timestamp": 780.0,
+        "vector": {
+            "position_i_m": 3093001.8009249642,
+            "position_j_m": 5467549.113619048,
+            "position_k_m": 2798642.2855688375,
+            "velocity_i_mps": -6767.511577482154,
+            "velocity_j_mps": 2696.928663141213,
+            "velocity_k_mps": 2211.8994967181948
+        }
+    },
+    {
+        "timestamp": 840.0,
+        "vector": {
+            "position_i_m": 2680428.8911282513,
+            "position_j_m": 5617188.7474888265,
+            "position_k_m": 2925087.07839868,
+            "velocity_i_mps": -6979.861469296005,
+            "velocity_j_mps": 2289.2261215659255,
+            "velocity_k_mps": 2001.3776976280833
+        }
+    },
+    {
+        "timestamp": 900.0,
+        "vector": {
+            "position_i_m": 2256034.2554371683,
+            "position_j_m": 5742054.422997959,
+            "position_k_m": 3038631.115078479,
+            "velocity_i_mps": -7161.424352471207,
+            "velocity_j_mps": 1871.433800565416,
+            "velocity_k_mps": 1782.032484765538
+        }
+    },
+    {
+        "timestamp": 960.0,
+        "vector": {
+            "position_i_m": 1821689.7994741246,
+            "position_j_m": 5841595.848256379,
+            "position_k_m": 3138773.841746846,
+            "velocity_i_mps": -7311.400353466174,
+            "velocity_j_mps": 1445.3949239563153,
+            "velocity_k_mps": 1554.831684544754
+        }
+    },
+    {
+        "timestamp": 1020.0,
+        "vector": {
+            "position_i_m": 1379311.254572843,
+            "position_j_m": 5915374.453853612,
+            "position_k_m": 3225073.833817775,
+            "velocity_i_mps": -7429.129023427893,
+            "velocity_j_mps": 1012.988978906026,
+            "velocity_k_mps": 1320.777720097195
+        }
+    },
+    {
+        "timestamp": 1080.0,
+        "vector": {
+            "position_i_m": 930849.7222754257,
+            "position_j_m": 5963065.320287584,
+            "position_k_m": 3297150.7395896325,
+            "velocity_i_mps": -7514.0922349084485,
+            "velocity_j_mps": 576.1234135574643,
+            "velocity_k_mps": 1080.90318112789
+        }
+    },
+    {
+        "timestamp": 1140.0,
+        "vector": {
+            "position_i_m": 478283.0638637482,
+            "position_j_m": 5984458.60342725,
+            "position_k_m": 3354686.9539829064,
+            "velocity_i_mps": -7565.916448821886,
+            "velocity_j_mps": 136.725213389288,
+            "velocity_k_mps": 836.2662616862006
+        }
+    },
+    {
+        "timestamp": 1200.0,
+        "vector": {
+            "position_i_m": 23607.173015385168,
+            "position_j_m": 5979460.451852062,
+            "position_k_m": 3397429.015087248,
+            "velocity_i_mps": -7584.374341958697,
+            "velocity_j_mps": -303.26760632233663,
+            "velocity_k_mps": 587.9460861258605
+        }
+    },
+    {
+        "timestamp": 1260.0,
+        "vector": {
+            "position_i_m": -431172.8298301243,
+            "position_j_m": 5948093.412164061,
+            "position_k_m": 3425188.717429459,
+            "velocity_i_mps": -7569.385788227713,
+            "velocity_j_mps": -741.9145542441427,
+            "velocity_k_mps": 337.0379440028395
+        }
+    },
+    {
+        "timestamp": 1320.0,
+        "vector": {
+            "position_i_m": -884051.4424852892,
+            "position_j_m": 5890496.320635736,
+            "position_k_m": 3437843.937130903,
+            "velocity_i_mps": -7521.018189671768,
+            "velocity_j_mps": -1177.2812250713296,
+            "velocity_k_mps": 84.64845503935868
+        }
+    },
+    {
+        "timestamp": 1380.0,
+        "vector": {
+            "position_i_m": -1333031.6263489574,
+            "position_j_m": 5806923.681828921,
+            "position_k_m": 3435339.1653995,
+            "velocity_i_mps": -7439.486156190779,
+            "velocity_j_mps": -1607.4478321098431,
+            "velocity_k_mps": -168.1093144330172
+        }
+    },
+    {
+        "timestamp": 1440.0,
+        "vector": {
+            "position_i_m": -1776133.613023487,
+            "position_j_m": 5697744.537086347,
+            "position_k_m": 3417685.748092408,
+            "velocity_i_mps": -7325.150535791084,
+            "velocity_j_mps": -2030.5176726840475,
+            "velocity_k_mps": -420.1207619497393
+        }
+    },
+    {
+        "timestamp": 1500.0,
+        "vector": {
+            "position_i_m": -2211403.6333727464,
+            "position_j_m": 5563440.828048251,
+            "position_k_m": 3384961.830384779,
+            "velocity_i_mps": -7178.516800049727,
+            "velocity_j_mps": -2444.625489042496,
+            "velocity_k_mps": -670.2746646154997
+        }
+    },
+    {
+        "timestamp": 1560.0,
+        "vector": {
+            "position_i_m": -2636922.5305456463,
+            "position_j_m": 5404605.26257172,
+            "position_k_m": 3337312.0068820314,
+            "velocity_i_mps": -7000.232792324428,
+            "velocity_j_mps": -2847.945687943069,
+            "velocity_k_mps": -917.4680783429658
+        }
+    },
+    {
+        "timestamp": 1620.0,
+        "vector": {
+            "position_i_m": -3050814.219026016,
+            "position_j_m": 5221938.692620173,
+            "position_k_m": 3274946.678811809,
+            "velocity_i_mps": -6791.085849041487,
+            "velocity_j_mps": -3238.7003827688036,
+            "velocity_k_mps": -1160.6111990387756
+        }
+    },
+    {
+        "timestamp": 1680.0,
+        "vector": {
+            "position_i_m": -3451253.952472345,
+            "position_j_m": 5016247.015835314,
+            "position_k_m": 3198141.121221874,
+            "velocity_i_mps": -6551.999307142714,
+            "velocity_j_mps": -3615.167222853452,
+            "velocity_k_mps": -1398.6321643425802
+        }
+    },
+    {
+        "timestamp": 1740.0,
+        "vector": {
+            "position_i_m": -3836476.36397665,
+            "position_j_m": 4788437.614594454,
+            "position_k_m": 3107234.2643855605,
+            "velocity_i_mps": -6284.0284134568965,
+            "velocity_j_mps": -3975.686975676792,
+            "velocity_k_mps": -1630.4817748135604
+        }
+    },
+    {
+        "timestamp": 1800.0,
+        "vector": {
+            "position_i_m": -4204783.243396339,
+            "position_j_m": 4539515.3483833335,
+            "position_k_m": 3002627.1948718373,
+            "velocity_i_mps": -5988.355654369742,
+            "velocity_j_mps": -4318.670828718841,
+            "velocity_k_mps": -1855.1381138393276
+        }
+    },
+    {
+        "timestamp": 1860.0,
+        "vector": {
+            "position_i_m": -4554551.017591432,
+            "position_j_m": 4270578.117269823,
+            "position_k_m": 2884781.382966861,
+            "velocity_i_mps": -5666.285526687778,
+            "velocity_j_mps": -4642.607379033737,
+            "velocity_k_mps": -2071.611046012339
+        }
+    },
+    {
+        "timestamp": 1920.0,
+        "vector": {
+            "position_i_m": -4884237.900726572,
+            "position_j_m": 3982812.0161385788,
+            "position_k_m": 2754216.644332862,
+            "velocity_i_mps": -5319.238773015688,
+            "velocity_j_mps": -4946.069280012005,
+            "velocity_k_mps": -2278.9465742764673
+        }
+    },
+    {
+        "timestamp": 1980.0,
+        "vector": {
+            "position_i_m": -5192390.6832663175,
+            "position_j_m": 3677486.1011332427,
+            "position_k_m": 2611508.8449532804,
+            "velocity_i_mps": -4948.7461072834485,
+            "velocity_j_mps": -5227.719516337246,
+            "velocity_k_mps": -2476.231036788169
+        }
+    },
+    {
+        "timestamp": 2040.0,
+        "vector": {
+            "position_i_m": -5477651.129897203,
+            "position_j_m": 3355946.791443061,
+            "position_k_m": 2457287.3595350166,
+            "velocity_i_mps": -4556.441458259176,
+            "velocity_j_mps": -5486.317279803121,
+            "velocity_k_mps": -2662.5951251599263
+        }
+    },
+    {
+        "timestamp": 2100.0,
+        "vector": {
+            "position_i_m": -5738761.958342907,
+            "position_j_m": 3019611.93115828,
+            "position_k_m": 2292232.2946150093,
+            "velocity_i_mps": -4144.054760957989,
+            "velocity_j_mps": -5720.723420430718,
+            "velocity_k_mps": -2837.2177065544593
+        }
+    },
+    {
+        "timestamp": 2160.0,
+        "vector": {
+            "position_i_m": -5974572.372892438,
+            "position_j_m": 2669964.537396371,
+            "position_k_m": 2117071.488644388,
+            "velocity_i_mps": -3713.4043277973396,
+            "velocity_j_mps": -5929.905449207261,
+            "velocity_k_mps": -2999.329432973095
+        }
+    },
+    {
+        "timestamp": 2220.0,
+        "vector": {
+            "position_i_m": -6184043.128427034,
+            "position_j_m": 2308546.262262824,
+            "position_k_m": 1932577.3022947118,
+            "velocity_i_mps": -3266.3888331478106,
+            "velocity_j_mps": -6112.942070746228,
+            "velocity_k_mps": -3148.2161220266744
+        }
+    },
+    {
+        "timestamp": 2280.0,
+        "vector": {
+            "position_i_m": -6366251.102800545,
+            "position_j_m": 1936950.597450835,
+            "position_k_m": 1739563.213143672,
+            "velocity_i_mps": -2804.978946578726,
+            "velocity_j_mps": -6269.027226237081,
+            "velocity_k_mps": -3283.221894487789
+        }
+    },
+    {
+        "timestamp": 2340.0,
+        "vector": {
+            "position_i_m": -6520393.357591797,
+            "position_j_m": 1556815.8513978417,
+            "position_k_m": 1538880.2297476903,
+            "velocity_i_mps": -2331.2086515930655,
+            "velocity_j_mps": -6397.4736292016705,
+            "velocity_k_mps": -3403.7520549950696
+        }
+    },
+    {
+        "timestamp": 2400.0,
+        "vector": {
+            "position_i_m": -6645790.669495855,
+            "position_j_m": 1169817.9298997773,
+            "position_k_m": 1331413.140893172,
+            "velocity_i_mps": -1847.1662879811608,
+            "velocity_j_mps": -6497.715778793879,
+            "velocity_k_mps": -3509.275703408339
+        }
+    },
+    {
+        "timestamp": 2460.0,
+        "vector": {
+            "position_i_m": -6741890.516944928,
+            "position_j_m": 777662.9519312934,
+            "position_k_m": 1118076.6165329306,
+            "velocity_i_mps": -1354.9853570917578,
+            "velocity_j_mps": -6569.312437660469,
+            "velocity_k_mps": -3599.3280654934183
+        }
+    },
+    {
+        "timestamp": 2520.0,
+        "vector": {
+            "position_i_m": -6808269.508938242,
+            "position_j_m": 382079.7331297246,
+            "position_k_m": 899811.1775571923,
+            "velocity_i_mps": -856.8351303190202,
+            "velocity_j_mps": -6611.948563714095,
+            "velocity_k_mps": -3673.5125328415916
+        }
+    },
+    {
+        "timestamp": 2580.0,
+        "vector": {
+            "position_i_m": -6844635.245503984,
+            "position_j_m": -15187.830031931167,
+            "position_k_m": 677579.0521162637,
+            "velocity_i_mps": -354.91110192991255,
+            "velocity_j_mps": -6625.436687544711,
+            "velocity_k_mps": -3731.5024031964767
+        }
+    },
+    {
+        "timestamp": 2640.0,
+        "vector": {
+            "position_i_m": -6850827.601704092,
+            "position_j_m": -412388.4419330945,
+            "position_k_m": 452359.93670279556,
+            "velocity_i_mps": 148.57467199329722,
+            "velocity_j_mps": -6609.717729602994,
+            "velocity_k_mps": -3773.042313664635
+        }
+    },
+    {
+        "timestamp": 2700.0,
+        "vector": {
+            "position_i_m": -6826819.429614324,
+            "position_j_m": -807771.1216258893,
+            "position_k_m": 225146.68061298592,
+            "velocity_i_mps": 651.4033062494075,
+            "velocity_j_mps": -6564.8612537190165,
+            "velocity_k_mps": -3797.949360620452
+        }
+    },
+    {
+        "timestamp": 2760.0,
+        "vector": {
+            "position_i_m": -6772716.675256365,
+            "position_j_m": -1199592.9149255573,
+            "position_k_m": -3059.087263117777,
+            "velocity_i_mps": 1151.358848315872,
+            "velocity_j_mps": -6491.065155961286,
+            "velocity_k_mps": -3806.113901474951
+        }
+    },
+    {
+        "timestamp": 2820.0,
+        "vector": {
+            "position_i_m": -6688757.910015262,
+            "position_j_m": -1586126.5709228206,
+            "position_k_m": -231251.37012363336,
+            "velocity_i_mps": 1646.2380265996428,
+            "velocity_j_mps": -6388.654790285329,
+            "velocity_k_mps": -3797.5000348568265
+        }
+    },
+    {
+        "timestamp": 2880.0,
+        "vector": {
+            "position_i_m": -6575313.2786331065,
+            "position_j_m": -1965668.1492298557,
+            "position_k_m": -458424.2340450743,
+            "velocity_i_mps": 2133.859942563564,
+            "velocity_j_mps": -6258.081534857397,
+            "velocity_k_mps": -3772.145757146279
+        }
+    },
+    {
+        "timestamp": 2940.0,
+        "vector": {
+            "position_i_m": -6432882.868417943,
+            "position_j_m": -2336544.524577587,
+            "position_k_m": -683576.2384352342,
+            "velocity_i_mps": 2612.075664401965,
+            "velocity_j_mps": -6099.920805357486,
+            "velocity_k_mps": -3730.1627947026245
+        }
+    },
+    {
+        "timestamp": 3000.0,
+        "vector": {
+            "position_i_m": -6262094.506834433,
+            "position_j_m": -2697120.7558319904,
+            "position_k_m": -905714.8467056247,
+            "velocity_i_mps": 3078.777680369436,
+            "velocity_j_mps": -5914.869523957148,
+            "velocity_k_mps": -3671.7361125294233
+        }
+    },
+    {
+        "timestamp": 3060.0,
+        "vector": {
+            "position_i_m": -6063700.9971391745,
+            "position_j_m": -3045807.2870897045,
+            "position_k_m": -1123860.7978070234,
+            "velocity_i_mps": 3531.9091704749026,
+            "velocity_j_mps": -5703.743055021535,
+            "velocity_k_mps": -3597.1231015202598
+        }
+    },
+    {
+        "timestamp": 3120.0,
+        "vector": {
+            "position_i_m": -5838576.804178274,
+            "position_j_m": -3381066.9492457677,
+            "position_k_m": -1337052.4194420942,
+            "velocity_i_mps": 3969.4730560363605,
+            "velocity_j_mps": -5467.471620892338,
+            "velocity_k_mps": -3506.6524478186616
+        }
+    },
+    {
+        "timestamp": 3180.0,
+        "vector": {
+            "position_i_m": -5587714.204867237,
+            "position_j_m": -3701421.7312953845,
+            "position_k_m": -1544349.8640223234,
+            "velocity_i_mps": 4389.540787546564,
+            "velocity_j_mps": -5207.0962133594185,
+            "velocity_k_mps": -3400.722689201342
+        }
+    },
+    {
+        "timestamp": 3240.0,
+        "vector": {
+            "position_i_m": -5312218.920213253,
+            "position_j_m": -4005459.2916341815,
+            "position_k_m": -1744839.2487719397,
+            "velocity_i_mps": 4790.260832423416,
+            "velocity_j_mps": -4923.7640186145545,
+            "velocity_k_mps": -3279.8004647492717
+        }
+    },
+    {
+        "timestamp": 3300.0,
+        "vector": {
+            "position_i_m": -5013305.24800796,
+            "position_j_m": -4291839.18075256,
+            "position_k_m": -1937636.6817972728,
+            "velocity_i_mps": 5169.86682550555,
+            "velocity_j_mps": -4618.723375592229,
+            "velocity_k_mps": -3144.4184654006576
+        }
+    },
+    {
+        "timestamp": 3360.0,
+        "vector": {
+            "position_i_m": -4692290.717504226,
+            "position_j_m": -4559298.7479755785,
+            "position_k_m": -2121892.156434905,
+            "velocity_i_mps": 5526.685346599619,
+            "velocity_j_mps": -4293.318289630542,
+            "velocity_k_mps": -2995.173094278021
+        }
+    },
+    {
+        "timestamp": 3420.0,
+        "vector": {
+            "position_i_m": -4350590.289485231,
+            "position_j_m": -4806658.706274095,
+            "position_k_m": -2296793.296763386,
+            "velocity_i_mps": 5859.143290984166,
+            "velocity_j_mps": -3948.98252532243,
+            "velocity_k_mps": -2832.721846943261
+        }
+    },
+    {
+        "timestamp": 3480.0,
+        "vector": {
+            "position_i_m": -3989710.127127881,
+            "position_j_m": -5032828.330660988,
+            "position_k_m": -2461568.9378094827,
+            "velocity_i_mps": 6165.774800520891,
+            "velocity_j_mps": -3587.233304264375,
+            "velocity_k_mps": -2657.7804229540357
+        }
+    },
+    {
+        "timestamp": 3540.0,
+        "vector": {
+            "position_i_m": -3611240.964947883,
+            "position_j_m": -5236810.2672809865,
+            "position_k_m": -2615492.524697626,
+            "velocity_i_mps": 6445.2277249093395,
+            "velocity_j_mps": -3209.664635139935,
+            "velocity_k_mps": -2471.119581267585
+        }
+    },
+    {
+        "timestamp": 3600.0,
+        "vector": {
+            "position_i_m": -3216851.104881594,
+            "position_j_m": -5417704.931998037,
+            "position_k_m": -2757885.3157779844,
+            "velocity_i_mps": 6696.269584639382,
+            "velocity_j_mps": -2817.9403051903364,
+            "velocity_k_mps": -2273.561753158648
+        }
+    },
+    {
+        "timestamp": 3660.0,
+        "vector": {
+            "position_i_m": -2808279.0702029597,
+            "position_j_m": -5574714.479072599,
+            "position_k_m": -2888119.3756207167,
+            "velocity_i_mps": 6917.793009338399,
+            "velocity_j_mps": -2413.7865636178612,
+            "velocity_k_mps": -2065.9774273820813
+        }
+    },
+    {
+        "timestamp": 3720.0,
+        "vector": {
+            "position_i_m": -2387325.9494846496,
+            "position_j_m": -5707146.322395714,
+            "position_k_m": -3005620.3446782604,
+            "velocity_i_mps": 7108.820627469066,
+            "velocity_j_mps": -1998.984528832538,
+            "velocity_k_mps": -1849.2813233132888
+        }
+    },
+    {
+        "timestamp": 3780.0,
+        "vector": {
+            "position_i_m": -1955847.4641848435,
+            "position_j_m": -5814416.193698844,
+            "position_k_m": -3109869.9733898947,
+            "velocity_i_mps": 7268.509385699538,
+            "velocity_j_mps": -1575.3623526832018,
+            "velocity_k_mps": -1624.4283687363973
+        }
+    },
+    {
+        "timestamp": 3840.0,
+        "vector": {
+            "position_i_m": -1515745.7946683697,
+            "position_j_m": -5896050.72418036,
+            "position_k_m": -3200408.409529379,
+            "velocity_i_mps": 7396.154278731401,
+            "velocity_j_mps": -1144.7871759042791,
+            "velocity_k_mps": -1392.4094998170274
+        }
+    },
+    {
+        "timestamp": 3900.0,
+        "vector": {
+            "position_i_m": -1068961.2005474148,
+            "position_j_m": -5951689.538072631,
+            "position_k_m": -3276836.2286729063,
+            "velocity_i_mps": 7491.191472922168,
+            "velocity_j_mps": -709.156909954417,
+            "velocity_k_mps": -1154.2473015894875
+        }
+    },
+    {
+        "timestamp": 3960.0,
+        "vector": {
+            "position_i_m": -617463.472148682,
+            "position_j_m": -5981086.84880869,
+            "position_k_m": -3338816.198786173,
+            "velocity_i_mps": 7553.200809667451,
+            "velocity_j_mps": -270.39188121852385,
+            "velocity_k_mps": -910.9915080039846
+        }
+    },
+    {
+        "timestamp": 4020.0,
+        "vector": {
+            "position_i_m": -163243.25067512575,
+            "position_j_m": -5984112.550625905,
+            "position_k_m": -3386074.771091648,
+            "velocity_i_mps": 7581.907677203076,
+            "velocity_j_mps": 169.57362581431926,
+            "velocity_k_mps": -663.714381214058
+        }
+    },
+    {
+        "timestamp": 4080.0,
+        "vector": {
+            "position_i_m": 291696.74477136764,
+            "position_j_m": -5960752.800656049,
+            "position_k_m": -3418403.2905748254,
+            "velocity_i_mps": 7577.184242237655,
+            "velocity_j_mps": 608.7998893005924,
+            "velocity_k_mps": -413.5059903353714
+        }
+    },
+    {
+        "timestamp": 4140.0,
+        "vector": {
+            "position_i_m": 745350.5447082132,
+            "position_j_m": -5911110.088787503,
+            "position_k_m": -3435658.9207165106,
+            "velocity_i_mps": 7539.050035620147,
+            "velocity_j_mps": 1045.3502972995434,
+            "velocity_k_mps": -161.4694103711579
+        }
+    },
+    {
+        "timestamp": 4200.0,
+        "vector": {
+            "position_i_m": 1195717.772470164,
+            "position_j_m": -5835402.794836192,
+            "position_k_m": -3437765.27829159,
+            "velocity_i_mps": 7467.671889073036,
+            "velocity_j_mps": 1477.299883956307,
+            "velocity_k_mps": 91.28413762529092
+        }
+    },
+    {
+        "timestamp": 4260.0,
+        "vector": {
+            "position_i_m": 1640812.4641329965,
+            "position_j_m": -5733964.234817541,
+            "position_k_m": -3424712.7753479728,
+            "velocity_i_mps": 7363.363222867606,
+            "velocity_j_mps": 1902.7438170316148,
+            "velocity_k_mps": 343.64018379666146
+        }
+    },
+    {
+        "timestamp": 4320.0,
+        "vector": {
+            "position_i_m": 2078671.8262872407,
+            "position_j_m": -5607241.200362166,
+            "position_k_m": -3396558.666766803,
+            "velocity_i_mps": 7226.582687171345,
+            "velocity_j_mps": 2319.8057993660836,
+            "velocity_k_mps": 594.4859225907933
+        }
+    },
+    {
+        "timestamp": 4380.0,
+        "vector": {
+            "position_i_m": 2507364.893035147,
+            "position_j_m": -5455791.997553852,
+            "position_k_m": -3353426.80310122,
+            "velocity_i_mps": 7057.932162646322,
+            "velocity_j_mps": 2726.6463471982343,
+            "velocity_k_mps": 842.7151200902904
+        }
+    },
+    {
+        "timestamp": 4440.0,
+        "vector": {
+            "position_i_m": 2925001.044004405,
+            "position_j_m": -5280283.993678887,
+            "position_k_m": -3295507.0896899663,
+            "velocity_i_mps": 6858.154128708649,
+            "velocity_j_mps": 3121.470908751693,
+            "velocity_k_mps": 1087.2329939181973
+        }
+    },
+    {
+        "timestamp": 4500.0,
+        "vector": {
+            "position_i_m": 3329738.345760514,
+            "position_j_m": -5081490.682552209,
+            "position_k_m": -3223054.6543385554,
+            "velocity_i_mps": 6628.128410660807,
+            "velocity_j_mps": 3502.537787165057,
+            "velocity_k_mps": 1326.961044168631
+        }
+    },
+    {
+        "timestamp": 4560.0,
+        "vector": {
+            "position_i_m": 3719791.6797558563,
+            "position_j_m": -4860288.2812173925,
+            "position_k_m": -3136388.727148498,
+            "velocity_i_mps": 6368.868319667357,
+            "velocity_j_mps": 3868.1658326574793,
+            "velocity_k_mps": 1560.841814000669
+        }
+    },
+    {
+        "timestamp": 4620.0,
+        "vector": {
+            "position_i_m": 4093440.620872684,
+            "position_j_m": -4617651.872895649,
+            "position_k_m": -3035891.237348823,
+            "velocity_i_mps": 6081.516202248807,
+            "velocity_j_mps": 4216.741869799449,
+            "velocity_k_mps": 1787.8435588178536
+        }
+    },
+    {
+        "timestamp": 4680.0,
+        "vector": {
+            "position_i_m": 4449037.031697708,
+            "position_j_m": -4354651.1130734,
+            "position_k_m": -2922005.1332377903,
+            "velocity_i_mps": 5767.3384186046305,
+            "velocity_j_mps": 4546.7278268898735,
+            "velocity_k_mps": 2006.9648033347858
+        }
+    },
+    {
+        "timestamp": 4740.0,
+        "vector": {
+            "position_i_m": 4785012.338901299,
+            "position_j_m": -4072445.51756048,
+            "position_k_m": -2795232.4325710246,
+            "velocity_i_mps": 5427.719771633713,
+            "velocity_j_mps": 4856.667535721139,
+            "velocity_k_mps": 2217.238766304028
+        }
+    },
+    {
+        "timestamp": 4800.0,
+        "vector": {
+            "position_i_m": 5099884.459481248,
+            "position_j_m": -3772279.3532118457,
+            "position_k_m": -2656132.011929316,
+            "velocity_i_mps": 5064.157410985539,
+            "velocity_j_mps": 5145.193171439947,
+            "velocity_k_mps": 2417.7376332402346
+        }
+    },
+    {
+        "timestamp": 4860.0,
+        "vector": {
+            "position_i_m": 5392264.34616212,
+            "position_j_m": -3455476.153777115,
+            "position_k_m": -2505317.1447601197,
+            "velocity_i_mps": 4678.25423883795,
+            "velocity_j_mps": 5411.031303776266,
+            "velocity_k_mps": 2607.576658131157
+        }
+    },
+    {
+        "timestamp": 4920.0,
+        "vector": {
+            "position_i_m": 5660862.12291127,
+            "position_j_m": -3123432.8850154993,
+            "position_k_m": -2343452.7989055146,
+            "velocity_i_mps": 4271.711846344809,
+            "velocity_j_mps": 5653.008532610232,
+            "velocity_k_mps": 2785.918075865002
+        }
+    },
+    {
+        "timestamp": 4980.0,
+        "vector": {
+            "position_i_m": 5904492.783333356,
+            "position_j_m": -2777613.784781537,
+            "position_k_m": -2171252.705501404,
+            "velocity_i_mps": 3846.323011819588,
+            "velocity_j_mps": 5870.0566826692975,
+            "velocity_k_mps": 2951.9748079270325
+        }
+    },
+    {
+        "timestamp": 5040.0,
+        "vector": {
+            "position_i_m": 6122081.426629525,
+            "position_j_m": -2419543.9052417935,
+            "position_k_m": -1989476.2121528005,
+            "velocity_i_mps": 3403.9637937077596,
+            "velocity_j_mps": 6061.217534088073,
+            "velocity_k_mps": 3105.013944822196
+        }
+    },
+    {
+        "timestamp": 5100.0,
+        "vector": {
+            "position_i_m": 6312668.007846603,
+            "position_j_m": -2050802.3857178509,
+            "position_k_m": -1798924.9342536153,
+            "velocity_i_mps": 2946.5852532427098,
+            "velocity_j_mps": 6225.647067612261,
+            "velocity_k_mps": 3244.359989660964
+        }
+    },
+    {
+        "timestamp": 5160.0,
+        "vector": {
+            "position_i_m": 6475411.58128676,
+            "position_j_m": -1673015.4858600001,
+            "position_k_m": -1600439.2192218988,
+            "velocity_i_mps": 2476.20484336718,
+            "velocity_j_mps": 6362.619205377081,
+            "velocity_k_mps": 3369.3978483982273
+        }
+    },
+    {
+        "timestamp": 5220.0,
+        "vector": {
+            "position_i_m": 6609594.018189499,
+            "position_j_m": -1287849.4099334693,
+            "position_k_m": -1394894.439258791,
+            "velocity_i_mps": 1994.8975020268895,
+            "velocity_j_mps": 6471.529030429733,
+            "velocity_k_mps": 3479.5755533353977
+        }
+    },
+    {
+        "timestamp": 5280.0,
+        "vector": {
+            "position_i_m": 6714623.182125903,
+            "position_j_m": -897002.9539396919,
+            "position_k_m": -1183197.1290076897,
+            "velocity_i_mps": 1504.7864892972784,
+            "velocity_j_mps": 6551.8954704848,
+            "velocity_k_mps": 3574.4067076788187
+        }
+    },
+    {
+        "timestamp": 5340.0,
+        "vector": {
+            "position_i_m": 6790035.547948715,
+            "position_j_m": -502200.00809435523,
+            "position_k_m": -966280.9851855505,
+            "velocity_i_mps": 1008.0340089810904,
+            "velocity_j_mps": 6603.36343379039,
+            "velocity_k_mps": 3653.472640187892
+        }
+    }
+]
