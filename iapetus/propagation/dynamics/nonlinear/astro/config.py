@@ -350,7 +350,7 @@ class StateContextManagerFactory:
         """Returns a method for converting DerivativeFcnContext to UiContext.
 
         Need to identify UiContext elements that do not exist in
-        DerivativeFcnContext, if any, and rely on user to input them as kwargs
+        DerivativeFcnContext, if any, and pull them from initial state
         """
         ui_field_keys = list(
             self.ui_input_init_context_model.__fields__.keys()
@@ -360,13 +360,12 @@ class StateContextManagerFactory:
         UiModel = self.ui_input_init_context_model
 
         def derivative_fcn_to_ui_context(
-            # self,
+            self,
             s: np.ndarray,
-            **kwargs,
         ) -> UiModel:
             data = {k: s[sv_list.index(k)] for k in sv_list}
             for k in keys_not_in_sv_list:
-                data[k] = kwargs[k]
+                data[k] = getattr(self.init_state, k)
             return UiModel(**data)
 
         return derivative_fcn_to_ui_context
@@ -503,6 +502,19 @@ class StateContextManagerFactory:
 
 class DerivativeFunctionError(Exception):
     pass
+
+
+def unpack_stm(y: np.ndarray, n: int):
+    """Unpacks state transition matrix (STM) elements from a vector output from
+    Runge-Kutta integrator.
+
+    Args:
+        y (np.ndarray): Array containing state vector with STM concatenated to
+            it
+        n (int): number of elements in state vector
+    """
+
+    return y[:n], y[n:].reshape((n, n))
 
 
 def derivative_function_factory(

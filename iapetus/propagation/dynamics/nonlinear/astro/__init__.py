@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from .config import Astrodynamics
 from .config import PropagatorInit as AstroPropIniit
+from .config import unpack_stm
 
 
 class AstroInit(BaseModel):
@@ -16,4 +17,4 @@ class AstroInit(BaseModel):
     perturbations: Optional[List[str]] = []
 
 
-__all__ = [Astrodynamics, AstroPropIniit, AstroInit]
+__all__ = [Astrodynamics, AstroPropIniit, AstroInit, unpack_stm]

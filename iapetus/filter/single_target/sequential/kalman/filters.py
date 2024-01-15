@@ -9,6 +9,8 @@ from iapetus.data.observation import (
 from iapetus.data.state.probabilistic import State
 from iapetus.propagation.dynamics.linear import LinearStateTransitionMatrix
 
+from .propagators import KalmanPropagator
+
 
 class DiscrKalmanFilterError(Exception):
     pass
@@ -100,7 +102,7 @@ class ExtendedKalmanFilter:
     def __init__(
         self,
         initial_state: State,
-        propagator: object,
+        propagator: KalmanPropagator,
         process_noise: np.ndarray,
         observations: ProbabilisticObservationSet,
         num_postponing_obs: int = 3,
@@ -134,7 +136,7 @@ class ExtendedKalmanFilter:
         self.H = self.H_fcn(t_k, state_k_minus_1.mean)
         dt = t_k - state_k_minus_1.timestamp
         mean_k, state_transition_matrix = self.propagator(
-            dt, state_k_minus_1.mean
+            dt, state_k_minus_1.prop_state
         )
         covariance_k = (
             state_transition_matrix

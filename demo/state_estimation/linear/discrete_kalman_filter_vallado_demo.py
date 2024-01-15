@@ -5,7 +5,9 @@ from iapetus.data.observation import (
     ProbabilisticObservationSet,
 )
 from iapetus.data.state.probabilistic import State
-from iapetus.filter.single_target.sequential.kalman import DiscreteKalmanFilter
+from iapetus.filter.single_target.sequential.kalman.filters import (
+    DiscreteKalmanFilter,
+)
 from iapetus.propagation.dynamics.linear import StmStraightLine
 
 propagator = StmStraightLine(1)

@@ -1,10 +1,16 @@
 """Propagators module.
 """
 
-# import inspect
+from typing import List, Optional
+
 import numpy as np
 
-from .dynamics.nonlinear.astro import Astrodynamics, AstroInit, AstroPropIniit
+from .dynamics.nonlinear.astro import (
+    Astrodynamics,
+    AstroInit,
+    AstroPropIniit,
+    unpack_stm,
+)
 from .integrators import rk4, rk45, rk78
 
 INTEGRATORS = {"rk4": rk4.rk4, "rk45": rk45.rk45, "rk78": rk78.rk78}
@@ -47,15 +53,40 @@ class AstroProp:
             stm_flag=ui_config.stm_flag,
         )
         self.integrator = get_integrator(ui_config.integrator)
+        self.StateContextManager = (
+            self.prop_init.state_context_manager_factory()
+        )
 
     def init_stm(self, y: np.ndarray):
         n = len(y)
         phi = np.eye(n)
         return np.concatenate((y, phi.reshape(n**2)), axis=0)
 
-    def __call__(self, u_state, tspan, dt, tspantol):
-        StateContextManager = self.prop_init.state_context_manager_factory()
-        scm = StateContextManager(u_state)
+    def state_context_manager(self, ui_state: dict):
+        """Returns an instantiated StateContextManager object.
+
+        Args:
+            ui_state (dict): dictionary of UiContext state elements
+        """
+        return self.StateContextManager(ui_state)
+
+    def __call__(
+        self,
+        tspan: List[float],
+        dt: float,
+        tspantol: float,
+        ui_state: Optional[dict] = None,
+        state_context_manager: Optional[object] = None,
+    ):
+        if not ui_state and not state_context_manager:
+            raise PropagatorConfigError(
+                "`ui_state` and `state_context_manager` args cannot both be "
+                "None"
+            )
+        if ui_state:
+            scm = self.StateContextManager(ui_state)
+        else:
+            scm = state_context_manager
 
         # Switch state to DerivativeFunctionContext model
         y0 = scm.ui_input_to_derivative_fcn_context(scm.init_state)
@@ -66,4 +97,13 @@ class AstroProp:
         derivative_fcn = self.prop_init.update_der(scm)
         T, Y = self.integrator(derivative_fcn, y0, tspan, dt, tspantol)
 
-        return T, Y
+        Phi = []
+        if self.prop_init.stm_flag:
+            X = []
+            for y in Y:
+                x, phi = unpack_stm(y)
+                X.append(x)
+                Phi.append(phi)
+        else:
+            X = Y
+        return T, X, Phi
