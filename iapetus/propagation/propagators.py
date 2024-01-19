@@ -60,7 +60,7 @@ class AstroProp:
     def init_stm(self, y: np.ndarray):
         n = len(y)
         phi = np.eye(n)
-        return np.concatenate((y, phi.reshape(n**2)), axis=0)
+        return np.concatenate((y, phi.reshape(n**2)), axis=0), n
 
     def state_context_manager(self, ui_state: dict):
         """Returns an instantiated StateContextManager object.
@@ -92,8 +92,8 @@ class AstroProp:
         y0 = scm.ui_input_to_derivative_fcn_context(scm.init_state)
 
         if self.prop_init.stm_flag:
-            y0 = self.init_stm(y0)
-        # y0, eom_state = self.redefine_user_input_numerical_state(u_state)
+            y0, state_length = self.init_stm(y0)
+
         derivative_fcn = self.prop_init.update_der(scm)
         T, Y = self.integrator(derivative_fcn, y0, tspan, dt, tspantol)
 
@@ -101,7 +101,7 @@ class AstroProp:
         if self.prop_init.stm_flag:
             X = []
             for y in Y:
-                x, phi = unpack_stm(y)
+                x, phi = unpack_stm(y, state_length)
                 X.append(x)
                 Phi.append(phi)
         else:

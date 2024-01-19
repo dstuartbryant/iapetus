@@ -71,7 +71,7 @@ T, Y_no_drag, _ = aprop(tspan, dt, tspantol, ui_state=X0_dict)
 # --------------------- Propagate WITH drag -----------------
 
 X0_dict["A_m2"] = 3**2
-X0_dict["Cd"] = 2.0
+X0_dict["Cd"] = 0.47
 X0_dict["m_kg"] = 50
 
 a_drag_init = AstroInit(

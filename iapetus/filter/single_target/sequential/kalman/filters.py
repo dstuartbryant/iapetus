@@ -1,5 +1,7 @@
 """Kalman filter module."""
 
+from typing import Callable
+
 import numpy as np
 
 from iapetus.data.observation import (
@@ -9,6 +11,7 @@ from iapetus.data.observation import (
 from iapetus.data.state.probabilistic import State
 from iapetus.propagation.dynamics.linear import LinearStateTransitionMatrix
 
+from .process_noise import ProcessNoise
 from .propagators import KalmanPropagator
 
 
@@ -103,8 +106,8 @@ class ExtendedKalmanFilter:
         self,
         initial_state: State,
         propagator: KalmanPropagator,
-        process_noise: np.ndarray,
-        observations: ProbabilisticObservationSet,
+        process_noise: ProcessNoise,
+        H_fcn: Callable,
         num_postponing_obs: int = 3,
     ):
         """
@@ -113,8 +116,9 @@ class ExtendedKalmanFilter:
             propagator (object): performs integration to predict state and
                 generate state transition matrices
             process_noise (np.ndarray): process noise matrix
-            observations (ProbabilisticObservationSet): sequence of
-                observations
+            H_fcn (Callable): method for taking partial derivatives wrt
+                "reference trajectory" in order to form the H matrix which
+                maps the state space to the observation space
             num_postponing_obs (int): Number of observations to process before
                 updating the reference trajectory. This can be necessary
                 especially when the observations contain significant noise.
@@ -125,8 +129,7 @@ class ExtendedKalmanFilter:
         self.X0 = initial_state
         self.propagator = propagator
         self.Q = process_noise
-        self.Z = observations
-        self.H_fcn = self.Z.H_fcn
+        self.H_fcn = H_fcn
         self.H = None
         self.postpone_index = num_postponing_obs
         self.iteration_idx = 0
@@ -134,15 +137,17 @@ class ExtendedKalmanFilter:
     def predict(self, t_k: float, state_k_minus_1: State) -> State:
         self.iteration_idx += 1
         self.H = self.H_fcn(t_k, state_k_minus_1.mean)
-        dt = t_k - state_k_minus_1.timestamp
-        mean_k, state_transition_matrix = self.propagator(
-            dt, state_k_minus_1.prop_state
+        _, mean_k, state_transition_matrix = self.propagator(
+            t_k_minus_1=state_k_minus_1.timestamp,
+            mean_k_minus_1=state_k_minus_1.mean,
+            t_k=t_k,
         )
+        dt = t_k - state_k_minus_1.timestamp
         covariance_k = (
             state_transition_matrix
             @ state_k_minus_1.covariance.matrix
             @ state_transition_matrix.T
-            + self.Q
+            + self.Q(dt, mean_k)
         )
         return State(timestamp=t_k, mean=mean_k, covariance=covariance_k)
 
@@ -160,14 +165,18 @@ class ExtendedKalmanFilter:
         if inner.shape[0] == 1:
             K_k = outer / inner
         else:
+            # print("SEE ME?")
             inv_inner = np.linalg.inv(inner)
             K_k = state_k.covariance.matrix @ self.H.T @ inv_inner
+
+        # print(f"K_k: {K_k}\n")
+        # print(f"self.H.T: {self.H.T}\n")
 
         delta_mean_k_given_k = K_k @ prefit_residual
         mean_k_given_k = state_k.mean + delta_mean_k_given_k
         covariance_k_given_k = (
             state_k.covariance.matrix
-            - K_k @ self.H.T @ state_k.covariance.matrix
+            - K_k @ self.H @ state_k.covariance.matrix
         )
 
         return (

@@ -23,6 +23,7 @@ theme:
 
 plugins:
   - mkdocstrings
+  - caption
   - bibtex:
       bib_file: "bibref/iapetus.bib"
       csl_file: "bibref/ieee.csl"
@@ -61,8 +62,10 @@ nav:
   - index.md
   - tutorials.md
   - How-To Guides: how-to-guides.md
+  - definitions.md
   - reference.md
   - Explanation: 
+    - explanation/explanation.md
     - Dynamics:
       - Linear Dynamic Systems: explanation/dynamics/linear/top_linear_dynamic_systems.md
       - Nonlinear Dynamic Systems:
@@ -71,6 +74,7 @@ nav:
           - Atmospheric Drag: explanation/dynamics/nonlinear/astrodynamics/atmospheric_drag.md
     - Single Target Estimation:
       - Single Target Bayes Filter: explanation/single_target_estimation/single_target_bayes_filter.md
+      - Smoothing: explanation/single_target_estimation/smoothing.md
     - Multiple Target Estimation:
       - Probability Hypothesis Density: explanation/multi_target_estimation/phd_filter.md
 
