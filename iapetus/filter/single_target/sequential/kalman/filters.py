@@ -134,6 +134,12 @@ class ExtendedKalmanFilter:
         self.postpone_index = num_postponing_obs
         self.iteration_idx = 0
 
+        # For storing values to be used in smoothing
+        self.X_stash = []
+        self.P_stash = []
+        self.Phi_stash = []
+        self.Q_stash = []
+
     def predict(self, t_k: float, state_k_minus_1: State) -> State:
         self.iteration_idx += 1
         self.H = self.H_fcn(t_k, state_k_minus_1.mean)
@@ -142,12 +148,15 @@ class ExtendedKalmanFilter:
             mean_k_minus_1=state_k_minus_1.mean,
             t_k=t_k,
         )
+        self.Phi_stash.append(state_transition_matrix)
         dt = t_k - state_k_minus_1.timestamp
+        Q = self.Q(dt, mean_k)
+        self.Q_stash.append(Q)
         covariance_k = (
             state_transition_matrix
             @ state_k_minus_1.covariance.matrix
             @ state_transition_matrix.T
-            + self.Q(dt, mean_k)
+            + Q
         )
         return State(timestamp=t_k, mean=mean_k, covariance=covariance_k)
 
@@ -178,6 +187,8 @@ class ExtendedKalmanFilter:
             state_k.covariance.matrix
             - K_k @ self.H @ state_k.covariance.matrix
         )
+        self.X_stash.append(mean_k_given_k)
+        self.P_stash.append(covariance_k_given_k)
 
         return (
             State(

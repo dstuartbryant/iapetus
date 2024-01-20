@@ -7,6 +7,7 @@
 """
 
 import json
+from typing import List
 
 import numpy as np
 
@@ -41,8 +42,8 @@ X0 = {
     "velocity_k_mps": 3792.38315729,
 }
 
-T = np.arange(0, 1 * 90 * 60)
-# T = np.arange(0, 10)  # Used for shorter runs when degugging is needed
+# T = np.arange(0, 1 * 90 * 60)
+T = np.arange(0, 10)  # Used for shorter runs when degugging is needed
 
 # --------------------- Propagate Truth -----------------
 tspan = T
@@ -141,119 +142,157 @@ for z in Z:
 
     x_k_minus_1 = x_k_given_k
 
-# ------------------ Compute IJK error from truth ----------
+# ------------------ Stash collection smoother input components ----------
 
-est_pos_errors = []
-standard_deviations = []
-for idx, x in enumerate(x_estimates):
-    true_pos = Y_truth[idx + 1][:3]
-    est_pos = x.mean[:3]
-    est_pos_errors.append(true_pos - est_pos)
-    variances = np.diag(x.covariance.matrix)
-    standard_deviations.append(np.sqrt(variances[:3]))
-
-# ------------------ Compute RIC (NTW) Error ----------
-
-est_ric_pos_errors = []
-ric_standard_deviations = []
-for idx, x in enumerate(x_estimates):
-    R_ECI_to_NTW = ntw_matrix(x.mean[:3], x.mean[3:])
-    est_ric_pos_errors.append(R_ECI_to_NTW @ est_pos_errors[idx])
-    P_eci = x.covariance.matrix[:3, :3]
-    P_ric = R_ECI_to_NTW.T @ P_eci @ R_ECI_to_NTW
-    ric_standard_deviations.append(np.sqrt(np.diag(P_ric)))
+# Don't need to stash all data, just a few elements for testing purposes
 
 
-# ------------------ Save data to facilitate plot troubleshooting -------------
-fpath = "/tmp/two_body_ekf_data.json"
+def shape_serialize_array(A: np.ndarray) -> List[float]:
+    n, m = A.shape
+    B = A.reshape(n * m)
+    return B.tolist()
 
-data = {
-    "timestamps": T.tolist(),
-    "est_pos_errors": [x.tolist() for x in est_pos_errors],
-    "standard_deviations": [x.tolist() for x in standard_deviations],
-    "residuals": [x.tolist() for x in residuals],
-    "est_ric_pos_errors": [x.tolist() for x in est_ric_pos_errors],
-    "ric_standard_deviations": [x.tolist() for x in ric_standard_deviations],
+
+X_stash = []
+P_stash = []
+Phi_stash = []
+Q_stash = []
+
+num_items = len(EKF.X_stash)
+last_idx = num_items - 1
+num_to_stash = 3
+for idx in range(num_to_stash):
+    stash_idx = last_idx - (num_to_stash - 1) + idx
+    X_stash.append(EKF.X_stash[stash_idx].tolist())
+    P_stash.append(shape_serialize_array(EKF.P_stash[stash_idx]))
+    Phi_stash.append(shape_serialize_array(EKF.Phi_stash[stash_idx]))
+    Q_stash.append(shape_serialize_array(EKF.Q_stash[stash_idx]))
+
+fpath = "/tmp/smoother_input_data.json"
+smooth_input_data = {
+    "X_stash": X_stash,
+    "P_stash": P_stash,
+    "Phi_stash": Phi_stash,
+    "Q_stash": Q_stash,
 }
 
 with open(fpath, "w") as f:
-    json.dump(data, f, indent=4)
-
-# ---------------- Unpack Saved Data for Plotting ---------------------------
-data = json.load(open(fpath, "r"))
-
-T = data["timestamps"]
-est_pos_errors = data["est_pos_errors"]
-standard_deviations = data["standard_deviations"]
-residuals = data["residuals"]
-est_ric_pos_errors = data["est_ric_pos_errors"]
-ric_standard_deviations = data["ric_standard_deviations"]
+    json.dump(smooth_input_data, f, indent=4)
 
 
-# ------------------ Plot IJK Error -----------------------------
+# # ------------------ Compute IJK error from truth ----------
+
+# est_pos_errors = []
+# standard_deviations = []
+# for idx, x in enumerate(x_estimates):
+#     true_pos = Y_truth[idx + 1][:3]
+#     est_pos = x.mean[:3]
+#     est_pos_errors.append(true_pos - est_pos)
+#     variances = np.diag(x.covariance.matrix)
+#     standard_deviations.append(np.sqrt(variances[:3]))
+
+# # ------------------ Compute RIC (NTW) Error ----------
+
+# est_ric_pos_errors = []
+# ric_standard_deviations = []
+# for idx, x in enumerate(x_estimates):
+#     R_ECI_to_NTW = ntw_matrix(x.mean[:3], x.mean[3:])
+#     est_ric_pos_errors.append(R_ECI_to_NTW @ est_pos_errors[idx])
+#     P_eci = x.covariance.matrix[:3, :3]
+#     P_ric = R_ECI_to_NTW.T @ P_eci @ R_ECI_to_NTW
+#     ric_standard_deviations.append(np.sqrt(np.diag(P_ric)))
 
 
-top = ErrorStdInput(
-    x=list(T[1:]),
-    y_error=[x[0] for x in est_pos_errors],
-    y_std=[x[0] for x in standard_deviations],
-    x_axis_title="Time elapsed past epoch [s]",
-    y_axis_title="I-axis error [m]",
-)
+# # ------------------ Save data to facilitate plot troubleshooting -------------
+# fpath = "/tmp/two_body_ekf_data.json"
 
-middle = ErrorStdInput(
-    x=list(T[1:]),
-    y_error=[x[1] for x in est_pos_errors],
-    y_std=[x[1] for x in standard_deviations],
-    x_axis_title="Time elapsed past epoch [s]",
-    y_axis_title="J-axis error [m]",
-)
+# data = {
+#     "timestamps": T.tolist(),
+#     "est_pos_errors": [x.tolist() for x in est_pos_errors],
+#     "standard_deviations": [x.tolist() for x in standard_deviations],
+#     "residuals": [x.tolist() for x in residuals],
+#     "est_ric_pos_errors": [x.tolist() for x in est_ric_pos_errors],
+#     "ric_standard_deviations": [x.tolist() for x in ric_standard_deviations],
+# }
 
-bottom = ErrorStdInput(
-    x=list(T[1:]),
-    y_error=[x[2] for x in est_pos_errors],
-    y_std=[x[2] for x in standard_deviations],
-    x_axis_title="Time elapsed past epoch [s]",
-    y_axis_title="K-axis error [m]",
-)
+# with open(fpath, "w") as f:
+#     json.dump(data, f, indent=4)
 
-fig_input = Plot3dErrorWithStdInput(
-    **{"top": top, "middle": middle, "bottom": bottom}
-)
+# # ---------------- Unpack Saved Data for Plotting ---------------------------
+# data = json.load(open(fpath, "r"))
 
-plotter = Plot3dErrorWithStd(upper=True, lower=True)
-figure = plotter(data=fig_input)
-
-# --------------- Plot RIC (NTW) Error -----------------------------
+# T = data["timestamps"]
+# est_pos_errors = data["est_pos_errors"]
+# standard_deviations = data["standard_deviations"]
+# residuals = data["residuals"]
+# est_ric_pos_errors = data["est_ric_pos_errors"]
+# ric_standard_deviations = data["ric_standard_deviations"]
 
 
-top = ErrorStdInput(
-    x=list(T[1:]),
-    y_error=[x[0] for x in est_ric_pos_errors],
-    y_std=[x[0] for x in ric_standard_deviations],
-    x_axis_title="Time elapsed past epoch [s]",
-    y_axis_title="Radial error [m]",
-)
+# # ------------------ Plot IJK Error -----------------------------
 
-middle = ErrorStdInput(
-    x=list(T[1:]),
-    y_error=[x[1] for x in est_ric_pos_errors],
-    y_std=[x[1] for x in ric_standard_deviations],
-    x_axis_title="Time elapsed past epoch [s]",
-    y_axis_title="In-Track error [m]",
-)
 
-bottom = ErrorStdInput(
-    x=list(T[1:]),
-    y_error=[x[2] for x in est_ric_pos_errors],
-    y_std=[x[2] for x in ric_standard_deviations],
-    x_axis_title="Time elapsed past epoch [s]",
-    y_axis_title="Cross-Track error [m]",
-)
+# top = ErrorStdInput(
+#     x=list(T[1:]),
+#     y_error=[x[0] for x in est_pos_errors],
+#     y_std=[x[0] for x in standard_deviations],
+#     x_axis_title="Time elapsed past epoch [s]",
+#     y_axis_title="I-axis error [m]",
+# )
 
-fig_input = Plot3dErrorWithStdInput(
-    **{"top": top, "middle": middle, "bottom": bottom}
-)
+# middle = ErrorStdInput(
+#     x=list(T[1:]),
+#     y_error=[x[1] for x in est_pos_errors],
+#     y_std=[x[1] for x in standard_deviations],
+#     x_axis_title="Time elapsed past epoch [s]",
+#     y_axis_title="J-axis error [m]",
+# )
 
-plotter = Plot3dErrorWithStd(upper=True, lower=True)
-figure_ric = plotter(data=fig_input)
+# bottom = ErrorStdInput(
+#     x=list(T[1:]),
+#     y_error=[x[2] for x in est_pos_errors],
+#     y_std=[x[2] for x in standard_deviations],
+#     x_axis_title="Time elapsed past epoch [s]",
+#     y_axis_title="K-axis error [m]",
+# )
+
+# fig_input = Plot3dErrorWithStdInput(
+#     **{"top": top, "middle": middle, "bottom": bottom}
+# )
+
+# plotter = Plot3dErrorWithStd(upper=True, lower=True)
+# figure = plotter(data=fig_input)
+
+# # --------------- Plot RIC (NTW) Error -----------------------------
+
+
+# top = ErrorStdInput(
+#     x=list(T[1:]),
+#     y_error=[x[0] for x in est_ric_pos_errors],
+#     y_std=[x[0] for x in ric_standard_deviations],
+#     x_axis_title="Time elapsed past epoch [s]",
+#     y_axis_title="Radial error [m]",
+# )
+
+# middle = ErrorStdInput(
+#     x=list(T[1:]),
+#     y_error=[x[1] for x in est_ric_pos_errors],
+#     y_std=[x[1] for x in ric_standard_deviations],
+#     x_axis_title="Time elapsed past epoch [s]",
+#     y_axis_title="In-Track error [m]",
+# )
+
+# bottom = ErrorStdInput(
+#     x=list(T[1:]),
+#     y_error=[x[2] for x in est_ric_pos_errors],
+#     y_std=[x[2] for x in ric_standard_deviations],
+#     x_axis_title="Time elapsed past epoch [s]",
+#     y_axis_title="Cross-Track error [m]",
+# )
+
+# fig_input = Plot3dErrorWithStdInput(
+#     **{"top": top, "middle": middle, "bottom": bottom}
+# )
+
+# plotter = Plot3dErrorWithStd(upper=True, lower=True)
+# figure_ric = plotter(data=fig_input)
