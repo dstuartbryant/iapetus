@@ -1,9 +1,10 @@
 """Demo for two-body state estimation with EKF, where drag coeff
-is included in state vector.
+is included in state vector, and smoothing applied.
 
 """
 
 import json
+from typing import List
 
 import numpy as np
 
@@ -14,10 +15,12 @@ from iapetus.filter.single_target.sequential.kalman.filters import (
 )
 from iapetus.filter.single_target.sequential.kalman.process_noise import (
     AstroProcessNoise,
+    ZeroProcessNoise,
 )
 from iapetus.filter.single_target.sequential.kalman.propagators import (
     KalmanAstroPropagator,
 )
+from iapetus.filter.single_target.sequential.smoothing import Reverse, Smoother
 from iapetus.propagation.dynamics.nonlinear.astro import snc
 from iapetus.propagation.dynamics.nonlinear.astro.xforms import ntw_matrix
 from iapetus.propagation.propagators import AstroInit, AstroProp
@@ -42,10 +45,10 @@ X0 = {
     "Cd": 0.5,
 }
 
-bad_cd = 2.0
+bad_cd = 0.6
 
-T = np.arange(0, 1 * 90 * 60, step=10)
-# T = np.arange(0, 10)  # Used for shorter runs when degugging is needed
+# T = np.arange(0, 1 * 90 * 60, step=10)
+T = np.arange(0, 100)  # Used for shorter runs when degugging is needed
 
 # --------------------- Propagate Truth -----------------
 tspan = T
@@ -76,7 +79,7 @@ for idx, pe in enumerate(pos_errors):
 # --------------------- Initialize EKF ---------------------
 # Covariance
 sigma_vel = sigma_pos * 1e-4
-sigma_cd = 1e-0
+sigma_cd = 1e-1
 variances = [
     sigma_pos**2,
     sigma_pos**2,
@@ -106,10 +109,11 @@ init_state.mean = np.random.multivariate_normal(
 init_state.mean[-1] = bad_cd
 
 # Process Noise
-Q_fcn = snc.QInertialCd(
-    qr_mps2=1.2e-9, qi_mps2=2.5e-10, qc_mps2=3e-9, qcd=5e-13
-)
-Q = AstroProcessNoise(Q=Q_fcn)
+# Q_fcn = snc.QInertialCd(
+#     qr_mps2=1.2e-9, qi_mps2=2.5e-10, qc_mps2=3e-9, qcd=5e-13
+# )
+# Q = AstroProcessNoise(Q=Q_fcn)
+Q = ZeroProcessNoise()
 
 # Map state to observation space
 H = np.hstack([np.eye(3), np.zeros((3, 4))])
@@ -148,6 +152,51 @@ for z in Z:
 
     x_k_minus_1 = x_k_given_k
 
+# ------------------ Stash collection smoother input components ----------
+
+X_stash = []
+P_stash = []
+Phi_stash = []
+Q_stash = []
+
+num_items = len(EKF.X_stash)
+
+for idx in range(len(EKF.X_stash)):
+    X_stash.append(EKF.X_stash[idx])
+    P_stash.append(EKF.P_stash[idx])
+    Phi_stash.append(EKF.Phi_stash[idx])
+    Q_stash.append(EKF.Q_stash[idx])
+
+
+# ------------------ Run Smoother ----------
+
+smoother = Smoother(X=X_stash, P=P_stash, PHI=Phi_stash, Q=Q_stash)
+x_init_smooth, P_init_smooth = smoother()
+
+# --- Propagate reference trajectory with smoothed correction to initial state
+X0_smooth = {
+    "position_i_m": x_init_smooth[0],
+    "position_j_m": x_init_smooth[1],
+    "position_k_m": x_init_smooth[2],
+    "velocity_i_mps": x_init_smooth[3],
+    "velocity_j_mps": x_init_smooth[4],
+    "velocity_k_mps": x_init_smooth[5],
+    "A_m2": 1,
+    "m_kg": 100,
+    "Cd": x_init_smooth[6],
+}
+
+a_init_smooth = AstroInit(
+    state_vector_content=["translational", "Cd"],
+    celestial_body="Earth",
+    stm_flag=False,
+    integrator="rk45",
+    perturbations=["atmospheric-drag"],
+)
+aprop_smooth = AstroProp(a_init_smooth)
+_, X_smooth, _ = aprop_smooth(tspan[1:], dt, tspantol, ui_state=X0_smooth)
+
+
 # ------------------ Compute IJK error from truth ----------
 
 est_pos_errors = []
@@ -177,6 +226,19 @@ for idx, x in enumerate(x_estimates):
     P_ric = R_ECI_to_NTW.T @ P_eci @ R_ECI_to_NTW
     ric_standard_deviations.append(np.sqrt(np.diag(P_ric)))
 
+# ------------------ Compute Smoothed RIC (NTW) Error ----------
+smooth_ric_pos_errors = []
+smooth_ric_stds = []
+# X_smooth = Reverse(smoother.X_smoothed)
+P_smooth = Reverse(smoother.P_smoothed)
+for idx, x in enumerate(X_smooth):
+    true_pos = Y_truth[idx + 1][:3]
+    smooth_pos_error = true_pos - x[:3]
+    R_ECI_to_NTW = ntw_matrix(x[:3], x[3:6])
+    smooth_ric_pos_errors.append(R_ECI_to_NTW @ smooth_pos_error)
+    smooth_ric_cov = R_ECI_to_NTW.T @ P_smooth[idx][:3, :3] @ R_ECI_to_NTW
+    smooth_ric_stds.append(np.sqrt(np.diag(smooth_ric_cov)))
+
 # ------------------ Save data to facilitate plot troubleshooting -------------
 fpath = "/tmp/two_body_ekf_data.json"
 
@@ -189,6 +251,8 @@ data = {
     "residuals": [x.tolist() for x in residuals],
     "est_ric_pos_errors": [x.tolist() for x in est_ric_pos_errors],
     "ric_standard_deviations": [x.tolist() for x in ric_standard_deviations],
+    "smooth_ric_pos_errors": [x.tolist() for x in smooth_ric_pos_errors],
+    "smooth_ric_stds": [x.tolist() for x in smooth_ric_stds],
 }
 
 with open(fpath, "w") as f:
@@ -206,6 +270,42 @@ cd_stds = data["cd_stds"]
 residuals = data["residuals"]
 est_ric_pos_errors = data["est_ric_pos_errors"]
 ric_standard_deviations = data["ric_standard_deviations"]
+smooth_ric_pos_errors = data["smooth_ric_pos_errors"]
+smooth_ric_stds = data["smooth_ric_stds"]
+
+# ------------------ Plot IJK Error -----------------------------
+
+
+top = ErrorStdInput(
+    x=list(T[1:]),
+    y_error=[x[0] for x in est_pos_errors],
+    y_std=[x[0] for x in standard_deviations],
+    x_axis_title="Time elapsed past epoch [s]",
+    y_axis_title="I-axis error [m]",
+)
+
+middle = ErrorStdInput(
+    x=list(T[1:]),
+    y_error=[x[1] for x in est_pos_errors],
+    y_std=[x[1] for x in standard_deviations],
+    x_axis_title="Time elapsed past epoch [s]",
+    y_axis_title="J-axis error [m]",
+)
+
+bottom = ErrorStdInput(
+    x=list(T[1:]),
+    y_error=[x[2] for x in est_pos_errors],
+    y_std=[x[2] for x in standard_deviations],
+    x_axis_title="Time elapsed past epoch [s]",
+    y_axis_title="K-axis error [m]",
+)
+
+fig_input = Plot3dErrorWithStdInput(
+    **{"top": top, "middle": middle, "bottom": bottom}
+)
+
+plotter = Plot3dErrorWithStd(upper=True, lower=True)
+figure = plotter(data=fig_input)
 
 # --------------- Plot RIC (NTW) Error -----------------------------
 
@@ -253,3 +353,36 @@ cd_data = ErrorStdInput(
 
 plotter = Plot1dErrorWithStd(upper=True, lower=True)
 figure_cd = plotter(data=cd_data)
+
+# --------------- Plot Smoothed RIC (NTW) Error -----------------------------
+
+top = ErrorStdInput(
+    x=list(T[1:]),
+    y_error=[x[0] for x in smooth_ric_pos_errors],
+    y_std=[x[0] for x in smooth_ric_stds],
+    x_axis_title="Time elapsed past epoch [s]",
+    y_axis_title="Radial error [m]",
+)
+
+middle = ErrorStdInput(
+    x=list(T[1:]),
+    y_error=[x[1] for x in smooth_ric_pos_errors],
+    y_std=[x[1] for x in smooth_ric_stds],
+    x_axis_title="Time elapsed past epoch [s]",
+    y_axis_title="In-Track error [m]",
+)
+
+bottom = ErrorStdInput(
+    x=list(T[1:]),
+    y_error=[x[2] for x in smooth_ric_pos_errors],
+    y_std=[x[2] for x in smooth_ric_stds],
+    x_axis_title="Time elapsed past epoch [s]",
+    y_axis_title="Cross-Track error [m]",
+)
+
+fig_input = Plot3dErrorWithStdInput(
+    **{"top": top, "middle": middle, "bottom": bottom}
+)
+
+plotter = Plot3dErrorWithStd(upper=True, lower=True)
+figure_ric_smooth = plotter(data=fig_input)

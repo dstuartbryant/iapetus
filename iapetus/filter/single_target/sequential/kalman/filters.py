@@ -95,8 +95,44 @@ class LinearizedKalmanFilter:
     Use Case: Non-linear systems.
     """
 
-    def __init__(self):
-        raise NotImplementedError
+    def __init__(
+        self,
+        propagator: KalmanPropagator,
+        process_noise: ProcessNoise,
+        H_fcn: Callable,
+    ):
+        """
+        Args:
+            propagator (object): performs integration to predict state and
+                generate state transition matrices
+            process_noise (np.ndarray): process noise matrix
+            H_fcn (Callable): method for taking partial derivatives wrt
+                "reference trajectory" in order to form the H matrix which
+                maps the state space to the observation space
+        """
+        self.propagator = propagator
+        self.Q = process_noise
+        self.H_fcn = H_fcn
+        self.H = None
+
+    def predict(self, t_k: float, state_k_minus_1: State) -> State:
+        self.H = self.H_fcn(t_k, state_k_minus_1.mean)
+        _, mean_k, state_transition_matrix = self.propagator(
+            t_k_minus_1=state_k_minus_1.timestamp,
+            mean_k_minus_1=state_k_minus_1.mean,
+            t_k=t_k,
+        )
+        self.Phi_stash.append(state_transition_matrix)
+        dt = t_k - state_k_minus_1.timestamp
+        Q = self.Q(dt, mean_k)
+        self.Q_stash.append(Q)
+        covariance_k = (
+            state_transition_matrix
+            @ state_k_minus_1.covariance.matrix
+            @ state_transition_matrix.T
+            + Q
+        )
+        return State(timestamp=t_k, mean=mean_k, covariance=covariance_k)
 
 
 class ExtendedKalmanFilter:
@@ -166,6 +202,8 @@ class ExtendedKalmanFilter:
         prefit_residual = z_k.mean - self.H @ state_k.mean
 
         if self.iteration_idx < self.postpone_index:
+            self.X_stash.append(state_k.mean)
+            self.P_stash.append(state_k.covariance.matrix)
             return state_k, prefit_residual
 
         R = z_k.covariance.matrix

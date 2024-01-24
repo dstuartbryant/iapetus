@@ -10,7 +10,7 @@ $$
 \end{equation}
 $$
 
-where, if $\vec{x}(t)$ is an $N\times 1$ vector, $F(t)$ is an $N\times N$ matrix which is sometimes referred to as the partial-derivative matrix [@vallado2013fundamentals-of].
+where, if $\vec{x}(t)$ is an $N\times 1$ vector, $F(t)$ is an $N\times N$ matrix which is sometimes referred to as the partial-derivative or *Jacobian* matrix [@vallado2013fundamentals-of].
 
 ## State Transition Matrix
 Given a state $\vec{x}(t_0)$ at some initial time $t_0$ and assuming no forcing functions are applied, i.e., system inputs, the state $\vec{x}(t)$ at some other time $t$ can be computed via the *state transition matrix* $\Phi(t,t_0)$ via

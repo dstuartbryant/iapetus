@@ -73,6 +73,11 @@ nav:
           - Two Body: explanation/dynamics/nonlinear/astrodynamics/two_body.md
           - Atmospheric Drag: explanation/dynamics/nonlinear/astrodynamics/atmospheric_drag.md
     - Single Target Estimation:
+      # - Batch:
+      - Sequential:
+        - Discrecte Kalman Filter: explanation/single_target_estimation/sequential/dkf.md
+        - Linearized Kalman Filter: explanation/single_target_estimation/sequential/lkf.md
+        - Extended Kalman Filter: explanation/single_target_estimation/sequential/ekf.md
       - Single Target Bayes Filter: explanation/single_target_estimation/single_target_bayes_filter.md
       - Smoothing: explanation/single_target_estimation/smoothing.md
     - Multiple Target Estimation:
