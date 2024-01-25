@@ -79,7 +79,7 @@ At time $t_0$ we have $\delta\vec{x}_0$, $\hat{X}_0$, $P_0$ and $Q_0$.
 
 Determine the Jacobian matrix $F$ once at the outset. See discussion of the Jacobian matrix in [Linear Dynamic Systems](../../dynamics/linear/top_linear_dynamic_systems.md){:target="_blank"}.
 
-At this stage we set $k=0$ such that 
+At this stage $k=0$ such that 
 
 $$
 \begin{align}
@@ -93,23 +93,136 @@ Q_k &= Q_0,
 \end{align}
 $$
 
-we have a collection of obserations from $t_{k+1}, \ldots, t_L$, wereh $L$ denotes the number of observations at different points in time, i.e., we have $\vec{z}_1, \ldots, \vec{z}_L$.
+and we have a set of $L$ number of obserations $\mathbf{Z}_{1:L} = \left\{\vec{z}_1, \ldots, \vec{z}_L \right\}$ spanning times $t_1, \ldots, t_L$. 
 
-We can compute all of the predicted states and error state transition matrices from $t_{k+1}=t_1$ to $t_L$ given some chosen form of *propagator*. E.g., if we choose to integrate to find all $\Phi$s, we can form sets of pre-computed states and error state transition matrices
+To faciliate notation, let $\mathbf{T}_{1:L} = \left\{t_1, \ldots, t_L \right\}$.
 
+Say we choose to use numerical integration to determine the error state transition matrices across all timestamps in $T_{1:L}$, and that the integration is performed via a *propagator* that also uses integration to propagate the reference trajectory.
+
+We can use such a *propagator* now to perform all of those computations ahead of performing any filter update steps, e.g.,
+
+$$
+\mathbf{X}_{1:L}, \mathbf{\Phi}_{1:L} = propagator\left(t_0, \hat{X}_0, \mathbf{T}_{1:L}\right),
+$$
+
+where
 
 $$
 \begin{align}
-\mathbf{X} &= \left\{\hat{X}_{k+1|k} \; : \; k+1 = 1, \ldots, L  \right\},
+\mathbf{X}_{1:L} &= \left\{\hat{X}_{j|i} : j = 1, \ldots, L; i = j-1  \right\},
 \\
-\mathbf{\Phi} &= \left\{\Phi\left(t_{k+1}, t_k\right) \; : \; k+1 = 1, \ldots, L  \right\}.
+\mathbf{\Phi}_{1:L} &= \left\{\Phi\left(t_j, t_i\right) : j = 1, \ldots, L; i = j-1   \right\}.
 \end{align}
 $$
 
+### Prediction $k=0$
+
+For the first prediction step we select the first elements of $\mathbf{X}_{1:L}$ and $\mathbf{\Phi}_{1:L}$, i.e., $\hat{X}_{1|0}$ and $\Phi\left(t_1, t_0\right)$, respectively.
+
+We don't do anything yet with the predicted state $\hat{X}_{1|0}$, but hold onto it for the update step.
+
+We do, however, compute the predicted state error and predicted error covariance as
+
+$$
+\begin{align}
+\delta\vec{x}_{1|0} &= \Phi\left(t_1, t_0\right) \delta\vec{x}_0 = \Phi\left(t_1, t_0\right) 0_{n\times 1} = 0, 
+\\
+P_{1|0} &= \Phi\left(t_1, t_0\right)  P_0 \Phi\left(t_1, t_0\right)^T + Q_0,
+\end{align}
+$$
+
+respectively. Notice that since $\delta\vec{x}_0 = 0_{n\times1}$ that the first predicted state error is also zero.
+
+### Update $k=0$
+
+Now for the first update step. First generate the observation matrix via the relationship
+
+$$
+H_1 = \frac{\partial \vec{z}_1}{\partial \hat{X}_{1|0}},
+$$
+
+
+then compute the residuals vector and Kalman gain as
+
+$$
+\begin{align}
+\tilde{b}_1 &= \vec{z}_1 - H_1\hat{X}_{1|0},
+\\
+K_1 &= P_{1|0} H_1^T \left[ H_1 P_{1|0}  H_1^T + R_1\right]^{-1},
+\end{align}
+$$
+
+respectively.
+
+Now for the state error estimate, which is computed in general by the equation
+
+$$
+\delta\vec{x}_{k+1} = \delta\vec{x}_{k+1|k} + K_{k+1} \left[ \tilde{b}_{k+1} - H_{k+1}\delta\vec{x}_{k+1|k}\right], \label{eq:general_state_error} \tag{3}
+$$
+
+but recall that, since we're still on the first filter iteration step with $k=0$, the first predicted state error ended up being zero, i.e., $\delta\vec{x}_{k+1|k} = \delta\vec{x}_{1|0} = 0$. So when computing Eq. \eqref{eq:general_state_error} for the first iteration, it simply reduces to
+
+$$
+\delta\vec{x}_1 = K_1 \tilde{b}_1. \label{eq:first_iter_state_error} \tag{4}
+$$
+
+Then, compute the error covariance estimate and state estimate as
+
+$$
+\begin{align}
+P_1 &= P_{1|0} - K_1 H_1 P_{1|0},
+\\
+\hat{X}_1 &= \hat{X}_{1|0} + \delta\vec{x}_1,
+\end{align}
+$$
+
+respectively, and that concludes the first filter prediction and update steps.
+
+Now we process the remainder of filter iterations $k=1,\ldots, L$ with the remainder of observations in $\mathbf{Z}_{1:L}$, predicted trajectory states  in $\mathbf{X}_{1:L}$, and error state transition matrices in $\mathbf{\Phi}_{1:L}$, all indexed from $j=2, \ldots, L$.
+
+Keep in mind the relationship between $j$ and $k$ is $j = k+1$ and that as we transition from one filter iteration to the next that the $\delta\vec{x}_{k+1}$ and $P_{k+1}$ from the update step becomes $\delta\vec{x}_{k}$ and $P_{k}$, respectively, in the subsequent filter iteration's prediction step.
+
+
+### Prediction $k=1,\ldots,L$
+
+With $j=k+1$ select $\hat{X}_{j|j-1} = \hat{X}_{k+1|k}$ and $\Phi\left(t_j, t_{j-1}\right) = \Phi\left(t_{k+1}, t_k\right)$ from $\mathbf{X}_{1:L}$ and $\mathbf{\Phi}_{1:L}$, respectively.
+
+Hold on to $\hat{X}_{k+1|k}$ for the update step and use $\Phi\left(t_{k+1}, t_k\right)$ to compute
+
+$$
+\begin{align}
+\delta\vec{x}_{k+1|k} &= \Phi\left(t_{k+1}, t_k\right) \delta\vec{x}_k, 
+\\
+P_{k+1|k} &= \Phi\left(t_{k+1}, t_k\right)  P_k \Phi\left(t_{k+1}, t_k\right)^T + Q_k.
+\end{align}
+$$
+
+### Update $k=1,\ldots,L$
+
+Select $\vec{z}_j = \vec{z}_{k+1}$ from $\mathbf{Z}_{1:L}$, generate the observation matrix via
+
+$$
+H_{k+1} = \frac{\partial \vec{z}_{k+1}}{\partial \hat{X}_{k+1|k}},
+$$
+
+and perform the following computations:
+
+$$
+\begin{align}
+\tilde{b}_{k+1} &= \vec{z}_{k+1} - H_{k+1}\hat{X}_{k+1|k},
+\\
+K_{k+1} &= P_{k+1|k} H_{k+1}^T \left[ H_{k+1} P_{k+1|k}  H_{k+1}^T + R_{k+1}\right]^{-1},
+\\
+\delta\vec{x}_{k+1} &= \delta\vec{x}_{k+1|k} + K_{k+1} \left[ \tilde{b}_{k+1} - H_{k+1} \delta\vec{x}_{k+1|k} \right],
+\\
+P_{k+1} &= P_{k+1|k} - K_{k+1} H_{k+1} P_{k+1|k},
+\\
+\hat{X}_{k+1} &= \hat{X}_{k+1|k} + \delta\vec{x}_{k+1}.
+\end{align}
+$$
+
+After processing the $L^\text{th}$ update step, $\hat{X}_L$ and $P_L$ represent the *current* state estimate and error covarinace at time $t_L$, respectively.
 
 
 
-
-* $Q_k$,
-* $\vec{z}_{k+1}$,
-* $R_{k+1}$.
+![alt text](../../../drawio/lkf.png)

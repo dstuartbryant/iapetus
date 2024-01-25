@@ -42,7 +42,12 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.tasklist:
       custom_checkbox: true
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  
 
 extra_javascript:
   - javascripts/bundle.af94fead.min.js
@@ -56,6 +61,7 @@ extra_javascript:
 
 extra_css:
   - stylesheets/extra.2af97fc9.min.css
+  - stylesheets/mermaid.css
 
 
 nav:
