@@ -145,11 +145,15 @@ class LinearizedKalmanFilter:
         P: np.ndarray,
         z: ProbabilisticObservation,
     ):
-        H = self.H_fcn(z.timestamp, x)
-        b_tilde = z.mean - H @ x
-        K = P @ H.T @ np.linalg.inv(H @ P @ H.T + z.covariance.matrix)
-        dx = dx + K @ (b_tilde - H @ dx)
-        P = P - K @ H @ P
+        y, H_tilde = self.H_fcn(z.timestamp, x)
+        b_tilde = z.mean - y
+        K = (
+            P
+            @ H_tilde.T
+            @ np.linalg.inv(H_tilde @ P @ H_tilde.T + z.covariance.matrix)
+        )
+        dx = dx + K @ (b_tilde - H_tilde @ dx)
+        P = P - K @ H_tilde @ P
         x = x + dx
 
         return dx, x, P, b_tilde
