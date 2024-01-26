@@ -15,4 +15,4 @@ class ProbabilisticObservation(State):
 @dataclass
 class ProbabilisticObservationSet:
     observations: List[ProbabilisticObservation]
-    H: np.ndarray
+    # H: np.ndarray

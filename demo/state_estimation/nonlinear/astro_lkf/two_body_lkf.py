@@ -11,16 +11,20 @@ from typing import List
 
 import numpy as np
 
-from iapetus.data.observation import ProbabilisticObservation
+from iapetus.data.observation import (
+    ProbabilisticObservation,
+    ProbabilisticObservationSet,
+)
 from iapetus.data.state.probabilistic import State as Pstate
 from iapetus.filter.single_target.sequential.kalman.filters import (
-    ExtendedKalmanFilter,
+    LinearizedKalmanFilter,
 )
 from iapetus.filter.single_target.sequential.kalman.process_noise import (
     AstroProcessNoise,
+    ZeroProcessNoise,
 )
 from iapetus.filter.single_target.sequential.kalman.propagators import (
-    ExtendedKalmanAstroPropagator,
+    LinearizedKalmanAstroPropagator,
 )
 from iapetus.propagation.dynamics.nonlinear.astro import snc
 from iapetus.propagation.dynamics.nonlinear.astro.xforms import ntw_matrix
@@ -43,7 +47,7 @@ X0 = {
 }
 
 # T = np.arange(0, 1 * 90 * 60)
-T = np.arange(0, 1000)  # Used for shorter runs when degugging is needed
+T = np.arange(0, 100)  # Used for shorter runs when degugging is needed
 
 # --------------------- Propagate Truth -----------------
 tspan = T
@@ -62,7 +66,7 @@ aprop = AstroProp(a_init)
 _, Y_truth, _ = aprop(tspan, dt, tspantol, ui_state=X0)
 
 # --------------------- Form Observations -----------------
-sigma_pos = 500  # [m]
+sigma_pos = 10  # [m]
 pos_errors = np.random.normal(0, sigma_pos, size=(len(T), 3))
 Z = []
 for idx, pe in enumerate(pos_errors):
@@ -71,7 +75,7 @@ for idx, pe in enumerate(pos_errors):
         continue
     Z.append(Y_truth[idx][:3] + pe)
 
-# --------------------- Initialize EKF ---------------------
+# --------------------- Initialize LKF ---------------------
 # Covariance
 sigma_vel = sigma_pos * 1e-4
 variances = [
@@ -88,7 +92,7 @@ P0 = np.diag(variances)
 a_init2 = a_init
 a_init2.stm_flag = True
 aprop2 = AstroProp(a_init2)
-kaprop = ExtendedKalmanAstroPropagator(X0, aprop2, tspantol)
+kaprop = LinearizedKalmanAstroPropagator(X0, aprop2, tspantol)
 init_state = Pstate(
     timestamp=T[0],
     mean=kaprop.scm.ui_input_to_derivative_fcn_context(kaprop.scm.init_state),
@@ -100,10 +104,17 @@ init_state.mean = np.random.multivariate_normal(
     init_state.mean, init_state.covariance.matrix
 )
 
+# Inflate initial covariance a little
+for i in range(6):
+    init_state.covariance.matrix[i, i] = (
+        init_state.covariance.matrix[i, i] * 100
+    )
+
 
 # Process Noise
 Q_fcn = snc.QInertialRic(qr_mps2=1.2e-9, qi_mps2=2.5e-10, qc_mps2=3e-9)
 Q = AstroProcessNoise(Q=Q_fcn)
+# Q = ZeroProcessNoise()
 
 # Map state to observation space
 H = np.hstack([np.eye(3), np.zeros((3, 3))])
@@ -116,68 +127,78 @@ def H_fcn(t, mean):
     return H
 
 
-# Init EKF
-EKF = ExtendedKalmanFilter(
-    initial_state=init_state, propagator=kaprop, process_noise=Q, H_fcn=H_fcn
-)
+# Init LKF
+LKF = LinearizedKalmanFilter(propagator=kaprop, process_noise=Q, H_fcn=H_fcn)
 
-# --------------------- Run EKF ---------------------
-x_predicted = []
-x_estimates = []
-residuals = []
+# # --------------------- Test LKF Propagator ---------------------
 
+# t0 = 0
+# mean_k_minus_1 = init_state.mean
+# T_LKF = T[1:4]
+
+# T_LKF_out, X, Phi = kaprop(t0, mean_k_minus_1, T_LKF)
+
+
+# --------------------- Format observations ---------------------
 time_index = 0
 x_k_minus_1 = init_state
+obs = []
 for z in Z:
     time_index += 1
-    print(f"time index: {time_index}")
     t_k = T[time_index]
-    x_k = EKF.predict(t_k=t_k, state_k_minus_1=x_k_minus_1)
-    z_k = ProbabilisticObservation(timestamp=t_k, mean=z, covariance=R)
-    x_k_given_k, resid = EKF.update(t_k=t_k, z_k=z_k, state_k=x_k)
+    obs.append(ProbabilisticObservation(timestamp=t_k, mean=z, covariance=R))
 
-    x_predicted.append(x_k)
-    residuals.append(resid)
-    x_estimates.append(x_k_given_k)
+Z_lkf = ProbabilisticObservationSet(observations=obs)
 
-    x_k_minus_1 = x_k_given_k
+# --------------------- Run LKF ---------------------
 
-# ------------------ Stash collection smoother input components ----------
+data = LKF(initial_state=init_state, observations=Z_lkf)
 
-# Don't need to stash all data, just a few elements for testing purposes
+# -------------------- Parse LKF Output ---------------------------------
 
-
-def shape_serialize_array(A: np.ndarray) -> List[float]:
-    n, m = A.shape
-    B = A.reshape(n * m)
-    return B.tolist()
+x_estimates = []
+P_estimates = []
+for d in data:
+    x_estimates.append(d.state_k_plus_1)
+    P_estimates.append(d.covariance_k_plus_1)
 
 
-X_stash = []
-P_stash = []
-Phi_stash = []
-Q_stash = []
+# # ------------------ Stash collection smoother input components ----------
 
-num_items = len(EKF.X_stash)
-last_idx = num_items - 1
-num_to_stash = 3
-for idx in range(num_to_stash):
-    stash_idx = last_idx - (num_to_stash - 1) + idx
-    X_stash.append(EKF.X_stash[stash_idx].tolist())
-    P_stash.append(shape_serialize_array(EKF.P_stash[stash_idx]))
-    Phi_stash.append(shape_serialize_array(EKF.Phi_stash[stash_idx]))
-    Q_stash.append(shape_serialize_array(EKF.Q_stash[stash_idx]))
+# # Don't need to stash all data, just a few elements for testing purposes
 
-fpath = "/tmp/smoother_input_data.json"
-smooth_input_data = {
-    "X_stash": X_stash,
-    "P_stash": P_stash,
-    "Phi_stash": Phi_stash,
-    "Q_stash": Q_stash,
-}
 
-with open(fpath, "w") as f:
-    json.dump(smooth_input_data, f, indent=4)
+# def shape_serialize_array(A: np.ndarray) -> List[float]:
+#     n, m = A.shape
+#     B = A.reshape(n * m)
+#     return B.tolist()
+
+
+# X_stash = []
+# P_stash = []
+# Phi_stash = []
+# Q_stash = []
+
+# num_items = len(EKF.X_stash)
+# last_idx = num_items - 1
+# num_to_stash = 3
+# for idx in range(num_to_stash):
+#     stash_idx = last_idx - (num_to_stash - 1) + idx
+#     X_stash.append(EKF.X_stash[stash_idx].tolist())
+#     P_stash.append(shape_serialize_array(EKF.P_stash[stash_idx]))
+#     Phi_stash.append(shape_serialize_array(EKF.Phi_stash[stash_idx]))
+#     Q_stash.append(shape_serialize_array(EKF.Q_stash[stash_idx]))
+
+# fpath = "/tmp/smoother_input_data.json"
+# smooth_input_data = {
+#     "X_stash": X_stash,
+#     "P_stash": P_stash,
+#     "Phi_stash": Phi_stash,
+#     "Q_stash": Q_stash,
+# }
+
+# with open(fpath, "w") as f:
+#     json.dump(smooth_input_data, f, indent=4)
 
 
 # ------------------ Compute IJK error from truth ----------
@@ -186,9 +207,9 @@ est_pos_errors = []
 standard_deviations = []
 for idx, x in enumerate(x_estimates):
     true_pos = Y_truth[idx + 1][:3]
-    est_pos = x.mean[:3]
+    est_pos = x[:3]
     est_pos_errors.append(true_pos - est_pos)
-    variances = np.diag(x.covariance.matrix)
+    variances = np.diag(P_estimates[idx])
     standard_deviations.append(np.sqrt(variances[:3]))
 
 # ------------------ Compute RIC (NTW) Error ----------
@@ -196,37 +217,37 @@ for idx, x in enumerate(x_estimates):
 est_ric_pos_errors = []
 ric_standard_deviations = []
 for idx, x in enumerate(x_estimates):
-    R_ECI_to_NTW = ntw_matrix(x.mean[:3], x.mean[3:])
+    R_ECI_to_NTW = ntw_matrix(x[:3], x[3:])
     est_ric_pos_errors.append(R_ECI_to_NTW @ est_pos_errors[idx])
-    P_eci = x.covariance.matrix[:3, :3]
+    P_eci = P_estimates[idx][:3, :3]
     P_ric = R_ECI_to_NTW.T @ P_eci @ R_ECI_to_NTW
     ric_standard_deviations.append(np.sqrt(np.diag(P_ric)))
 
 
-# ------------------ Save data to facilitate plot troubleshooting -------------
-fpath = "/tmp/two_body_ekf_data.json"
+# # ------------------ Save data to facilitate plot troubleshooting -------------
+# fpath = "/tmp/two_body_ekf_data.json"
 
-data = {
-    "timestamps": T.tolist(),
-    "est_pos_errors": [x.tolist() for x in est_pos_errors],
-    "standard_deviations": [x.tolist() for x in standard_deviations],
-    "residuals": [x.tolist() for x in residuals],
-    "est_ric_pos_errors": [x.tolist() for x in est_ric_pos_errors],
-    "ric_standard_deviations": [x.tolist() for x in ric_standard_deviations],
-}
+# data = {
+#     "timestamps": T.tolist(),
+#     "est_pos_errors": [x.tolist() for x in est_pos_errors],
+#     "standard_deviations": [x.tolist() for x in standard_deviations],
+#     "residuals": [x.tolist() for x in residuals],
+#     "est_ric_pos_errors": [x.tolist() for x in est_ric_pos_errors],
+#     "ric_standard_deviations": [x.tolist() for x in ric_standard_deviations],
+# }
 
-with open(fpath, "w") as f:
-    json.dump(data, f, indent=4)
+# with open(fpath, "w") as f:
+#     json.dump(data, f, indent=4)
 
-# ---------------- Unpack Saved Data for Plotting ---------------------------
-data = json.load(open(fpath, "r"))
+# # ---------------- Unpack Saved Data for Plotting ---------------------------
+# data = json.load(open(fpath, "r"))
 
-T = data["timestamps"]
-est_pos_errors = data["est_pos_errors"]
-standard_deviations = data["standard_deviations"]
-residuals = data["residuals"]
-est_ric_pos_errors = data["est_ric_pos_errors"]
-ric_standard_deviations = data["ric_standard_deviations"]
+# T = data["timestamps"]
+# est_pos_errors = data["est_pos_errors"]
+# standard_deviations = data["standard_deviations"]
+# residuals = data["residuals"]
+# est_ric_pos_errors = data["est_ric_pos_errors"]
+# ric_standard_deviations = data["ric_standard_deviations"]
 
 
 # ------------------ Plot IJK Error -----------------------------

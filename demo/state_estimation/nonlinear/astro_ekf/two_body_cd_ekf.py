@@ -44,8 +44,8 @@ X0 = {
 
 bad_cd = 2.0
 
-T = np.arange(0, 1 * 90 * 60, step=10)
-# T = np.arange(0, 10)  # Used for shorter runs when degugging is needed
+# T = np.arange(0, 1 * 90 * 60, step=10)
+T = np.arange(0, 10)  # Used for shorter runs when degugging is needed
 
 # --------------------- Propagate Truth -----------------
 tspan = T

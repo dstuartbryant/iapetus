@@ -67,7 +67,7 @@ aprop = AstroProp(a_init)
 _, Y_truth, _ = aprop(tspan, dt, tspantol, ui_state=X0)
 
 # --------------------- Form Observations -----------------
-sigma_pos = 1e3  # [m]
+sigma_pos = 1e1  # [m]
 pos_errors = np.random.normal(0, sigma_pos, size=(len(T), 3))
 Z = []
 for idx, pe in enumerate(pos_errors):
