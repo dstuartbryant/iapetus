@@ -8,6 +8,8 @@ from typing import List
 
 import numpy as np
 
+from .kalman.data import LkfDataPoint
+
 
 class SmootherError(Exception):
     pass
@@ -136,3 +138,65 @@ class Smoother:
             self.P_smoothed.append(P_k_given_ell)
 
         return x_k_given_ell, P_k_given_ell
+
+
+def lkf_smoother(data: List[LkfDataPoint]):
+    """Smoother for linearize Kalman filter (LKF).
+
+    NOTE: Assumptions:
+
+    [1] The last LKF iteration is indexed by k, and smoother iterations are
+        indexed by ell, so to start, assume L = k + 1, i.e., k = L - 1.
+
+    [2] Smoother iterates all the way to k=0, which assumes that the LKF had an
+        observation at t_k = t_0, i.e., the initial state X0 provided to the
+        LKF was already propagated to the first observation time at t_0.
+
+    [3] In general, L > k
+    """
+    # Resort data points by k steps in descending order
+    data.sort(key=lambda x: x.k, reverse=True)
+
+    L = data[0].k + 1
+    k = L
+    X_smoothed = [data[0].state_k_plus_1]
+    P_smoothed = [data[0].covariance_k_plus_1]
+    while k >= 0:
+        k -= 1
+        dp = data[k]  # fwd_filter_data_point
+
+        # P_L-1|L-1 = P_k|k, which is covariance_k
+        P_k_k = dp.covariance_k
+
+        # Phi(t_L, t_L-1) = Phi(t_k+1, t_k), which is
+        # error_state_transition_matrix_k_plus_1_k
+        Phi = dp.error_state_transition_matrix_k_plus_1_k
+
+        # Q_L-1 = Q_k which is just the Q attr
+        Q = dp.Q
+
+        # P_L|L-1 = P_k+1|k
+        P_kp1_k = P_k_k @ Phi.T @ (Phi @ P_k_k @ Phi.T + Q)
+
+        # S_L-1 = S_k
+        S_k = P_k_k @ Phi.T @ np.linalg.inv(P_kp1_k)
+
+        # X_L-1|L-1 = X_k|k
+        X_k_k = dp.state_k
+
+        # X_k+1|l is last element smoothed X stash
+        X_kp1_L = X_smoothed[-1]
+
+        # X_L-1|L = X_k|k+1
+        X_k_L = X_k_k + S_k @ (X_kp1_L - Phi @ X_k_k)
+
+        # P_k+1|L
+        P_kp1_L = P_smoothed[-1]
+
+        # P_k|L
+        P_k_L = P_k_k + S_k @ (P_kp1_L - P_kp1_k) @ S_k.T
+
+        X_smoothed.append(X_k_L)
+        P_smoothed.append(P_k_L)
+
+    return X_kp1_L, P_k_L

@@ -26,6 +26,7 @@ from iapetus.filter.single_target.sequential.kalman.filters import (
 from iapetus.filter.single_target.sequential.kalman.process_noise import (
     ZeroProcessNoise,
 )
+from iapetus.filter.single_target.sequential.smoothing import lkf_smoother
 
 CURR_DIR = path.dirname(path.abspath(__file__))
 OBS_PATH = path.join(CURR_DIR, "obs_data.json")
@@ -137,7 +138,63 @@ X_init_LKF = Pstate(timestamp=0, mean=X0, covariance=P0)
 LKF_data = LKF(initial_state=X_init_LKF, observations=Z)
 
 
-last_lkf_mean = LKF_data[-1].state_k_plus_1
-propagated_batch_state, _ = propagator(t0, X0_i, Z.observations[-1].timestamp)
+# last_lkf_mean = LKF_data[-1].state_k_plus_1
+# propagated_batch_state, _ = propagator(t0, X0_i, Z.observations[-1].timestamp)
 
-lkf_resids = [x.prefit_resid for x in LKF_data]
+# lkf_resids = [x.prefit_resid for x in LKF_data]
+
+# ----------------- Run LKF smoother ---------------------
+X0_smooth, P0_smooth = lkf_smoother(LKF_data)
+
+
+# ----------------- Smoother troubleshooting ------------------
+
+"""
+
+Observations at: t_0, t_1, t_2
+
+L = 2
+
+X_L|L is updated estimate at t_L = t_2
+
+If k = L - 1 = 1,
+* X_k|L = Phi(t_k, t_L) X_L_L
+
+
+"""
+
+data = LKF_data
+data.sort(key=lambda x: x.k, reverse=True)
+L = data[0].k + 1
+k = L - 1
+dp = data[k]
+
+P_k_k = dp.covariance_k
+
+# Phi(t_L, t_L-1) = Phi(t_k+1, t_k), which is
+# error_state_transition_matrix_k_plus_1_k
+Phi = dp.error_state_transition_matrix_k_plus_1_k
+
+# Q_L-1 = Q_k which is just the Q attr
+Q = dp.Q
+
+# P_L|L-1 = P_k+1|k
+P_kp1_k = P_k_k @ Phi.T @ (Phi @ P_k_k @ Phi.T + Q)
+
+# S_L-1 = S_k
+S_k = P_k_k @ Phi.T @ np.linalg.inv(P_kp1_k)
+
+# X_L-1|L-1 = X_k|k
+X_k_k = dp.state_k
+
+# X_k+1|l is last element smoothed X stash
+X_kp1_L = dp.state_k_plus_1
+
+# X_L-1|L = X_k|k+1
+X_k_L = X_k_k + S_k @ (X_kp1_L - Phi @ X_k_k)
+
+# # P_k+1|L
+# P_kp1_L = P_smoothed[-1]
+
+# # P_k|L
+# P_k_L = P_k_k + S_k @ (P_kp1_L - P_kp1_k) @ S_k.T
