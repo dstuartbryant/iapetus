@@ -49,4 +49,4 @@ def batch_processor(
     # X0 += xhat
     # xbar = xbar - xhat
 
-    return xhat, xhat_mapped_fwd, P, residuals
+    return xhat, xhat_mapped_fwd, P, residuals, X_ref, STMS

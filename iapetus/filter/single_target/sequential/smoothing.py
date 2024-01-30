@@ -163,7 +163,11 @@ def lkf_smoother(data: List[LkfDataPoint]):
     P_smoothed = [data[0].covariance_k_plus_1]
     while k >= 0:
         k -= 1
-        dp = data[k]  # fwd_filter_data_point
+        dp = [x for x in data if x.k == k][0]  # fwd_filter_data_point
+
+        print(f"dp: {dp.dict()}")
+
+        break
 
         # P_L-1|L-1 = P_k|k, which is covariance_k
         P_k_k = dp.covariance_k
@@ -176,7 +180,7 @@ def lkf_smoother(data: List[LkfDataPoint]):
         Q = dp.Q
 
         # P_L|L-1 = P_k+1|k
-        P_kp1_k = P_k_k @ Phi.T @ (Phi @ P_k_k @ Phi.T + Q)
+        P_kp1_k = Phi @ P_k_k @ Phi.T + Q
 
         # S_L-1 = S_k
         S_k = P_k_k @ Phi.T @ np.linalg.inv(P_kp1_k)

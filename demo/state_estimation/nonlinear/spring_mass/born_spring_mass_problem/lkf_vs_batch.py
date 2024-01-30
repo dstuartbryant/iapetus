@@ -27,6 +27,7 @@ from iapetus.filter.single_target.sequential.kalman.process_noise import (
     ZeroProcessNoise,
 )
 from iapetus.filter.single_target.sequential.smoothing import lkf_smoother
+from iapetus.propagation.integrators.rk45 import rk45
 
 CURR_DIR = path.dirname(path.abspath(__file__))
 OBS_PATH = path.join(CURR_DIR, "obs_data.json")
@@ -60,19 +61,68 @@ def propagator(t0: float, X0: np.ndarray, t: float):
     return np.array([x, v]), Phi
 
 
+def add_stm_to_state_vector(y, phi):
+    return np.concatenate(
+        (
+            y,
+            phi.reshape(
+                2**2,
+            ),
+        ),
+        axis=0,
+    )
+
+
+def remove_stm_from_state_vector(y):
+    x = y[:2]
+    phi = y[2:].reshape((2, 2))
+    return x, phi
+
+
+def deriv_fcn(t, y):
+    """Derivative function for sequential propagator integration."""
+
+    k1 = 2.5
+    k2 = 3.7
+    m = 1.5
+    w = np.sqrt((k1 + k2) / m)
+
+    y, phi = remove_stm_from_state_vector(y)
+
+    A = np.array([[0, 1], [-(w**2), 0]])
+    ydot = A @ y
+
+    phi_dot = A @ phi
+    ydot = add_stm_to_state_vector(ydot, phi_dot)
+
+    return ydot
+
+
+def sequential_propagator(t0: float, X0: np.ndarray, t: float):
+    phi = np.eye(2)
+    tspan = [t0, t]
+    dt = t - t0
+    X0 = add_stm_to_state_vector(X0, phi)
+    _, Y = rk45(deriv_fcn, X0, tspan, dt, 1e-3)
+    x, phi = remove_stm_from_state_vector(Y[-1])
+    return x, phi
+
+
 def propagator_wrapper(t0: float, mean_k_minus_1: np.ndarray, T: List[float]):
     """Wrapper for LKF implementation."""
     if t0 != T[0]:
         raise ValueError("First time stamp in T should match t0")
 
-    X = []
-    PHI = []
-    for t in T:
-        x, phi = propagator(t0, mean_k_minus_1, t)
-        X.append(x)
-        PHI.append(phi)
+    states = [mean_k_minus_1]
+    stms = [np.eye(2)]
+    X_k = mean_k_minus_1
+    for t_kp1, t_k in zip(T[1:], T[:-1]):
+        x, phi = sequential_propagator(t_k, X_k, t_kp1)
+        states.append(x)
+        stms.append(phi)
+        X_k = x
 
-    return T, X, PHI
+    return T, states, stms
 
 
 def H_fcn(t: float, X: np.ndarray) -> np.ndarray:
@@ -116,14 +166,56 @@ P0_i = deepcopy(P0)
 xbar = deepcopy(xbar0)
 xhats = []
 for i in range(1):
-    xhat, xhat_fwd, P, residuals = batch_processor(
-        t0, X0_i, P0_i, xbar, Z, propagator, H_fcn
-    )
+    (
+        xhat,
+        xhat_fwd,
+        P,
+        batch_residuals,
+        batch_predicted_states,
+        batch_stms,
+    ) = batch_processor(t0, X0_i, P0_i, xbar, Z, propagator, H_fcn)
     xhats.append(xhat)
     X0_i += xhat
     xbar = xbar - xhat
 
+propagated_batch_state, _ = propagator(t0, X0_i, Z.observations[-1].timestamp)
+
 # ----------------- Initilize LKF ---------------------
+
+
+# lkf_T, lkf_predicted_states, lkf_stms = propagator_wrapper(
+#     t0, X0, [z.timestamp for z in Z.observations]
+# )
+
+
+# def lkf_predict(idx, dx0, P0):
+#     phi = lkf_stms[idx]
+#     dx = phi @ dx0
+#     P = phi @ P0 @ phi.T
+
+#     return dx, P
+
+
+# def lkf_update(idx, dxi, Pi, zk):
+#     xi = lkf_predicted_states[idx]
+#     y, H = H_fcn(zk.timestamp, xi)
+#     b = zk.mean - y
+#     K = Pi @ H.T @ np.linalg.inv(H @ Pi @ H.T + R)
+#     dxk = dxi + K @ (b - H @ dxi)
+#     Pk = (np.eye(2) - K @ H) @ Pi
+#     xk = xi + dxk
+#     return dxk, xk, Pk, b
+
+
+# dxk = np.array([0, 0])
+# Pk = deepcopy(P0_i)
+# lkf_residuals = []
+# for idx in range(len(Z.observations)):
+#     dxi, Pi = lkf_predict(idx, dxk, Pk)
+#     dxk, xk, Pk, bk = lkf_update(idx, dxi, Pi, Z.observations[idx])
+
+#     lkf_residuals.append(bk)
+
 
 LKF = LinearizedKalmanFilter(
     propagator=propagator_wrapper,
@@ -137,13 +229,13 @@ X_init_LKF = Pstate(timestamp=0, mean=X0, covariance=P0)
 
 LKF_data = LKF(initial_state=X_init_LKF, observations=Z)
 
+lkf_ref_traj = [x.state_k_plus_1_given_k for x in LKF_data]
+
 
 # last_lkf_mean = LKF_data[-1].state_k_plus_1
-# propagated_batch_state, _ = propagator(t0, X0_i, Z.observations[-1].timestamp)
 
-# lkf_resids = [x.prefit_resid for x in LKF_data]
 
-# ----------------- Run LKF smoother ---------------------
+# # ----------------- Run LKF smoother ---------------------
 X0_smooth, P0_smooth = lkf_smoother(LKF_data)
 
 
@@ -163,38 +255,40 @@ If k = L - 1 = 1,
 
 """
 
-data = LKF_data
+data = deepcopy(LKF_data)
 data.sort(key=lambda x: x.k, reverse=True)
 L = data[0].k + 1
 k = L - 1
-dp = data[k]
+dp = [x for x in data if x.k == k][0]
 
-P_k_k = dp.covariance_k
 
-# Phi(t_L, t_L-1) = Phi(t_k+1, t_k), which is
-# error_state_transition_matrix_k_plus_1_k
-Phi = dp.error_state_transition_matrix_k_plus_1_k
+# P_k_k = dp.covariance_k
 
-# Q_L-1 = Q_k which is just the Q attr
-Q = dp.Q
+# # Phi(t_L, t_L-1) = Phi(t_k+1, t_k), which is
+# # error_state_transition_matrix_k_plus_1_k
+# Phi = dp.error_state_transition_matrix_k_plus_1_k
 
-# P_L|L-1 = P_k+1|k
-P_kp1_k = P_k_k @ Phi.T @ (Phi @ P_k_k @ Phi.T + Q)
+# # Q_L-1 = Q_k which is just the Q attr
+# Q = dp.Q
 
-# S_L-1 = S_k
-S_k = P_k_k @ Phi.T @ np.linalg.inv(P_kp1_k)
+# # P_L|L-1 = P_k+1|k
 
-# X_L-1|L-1 = X_k|k
-X_k_k = dp.state_k
+# P_kp1_k = Phi @ P_k_k @ Phi.T + Q
 
-# X_k+1|l is last element smoothed X stash
-X_kp1_L = dp.state_k_plus_1
+# # S_L-1 = S_k
+# S_k = P_k_k @ Phi.T @ np.linalg.inv(P_kp1_k)
 
-# X_L-1|L = X_k|k+1
-X_k_L = X_k_k + S_k @ (X_kp1_L - Phi @ X_k_k)
+# # X_L-1|L-1 = X_k|k
+# X_k_k = dp.state_k
 
-# # P_k+1|L
-# P_kp1_L = P_smoothed[-1]
+# # X_k+1|l is last element smoothed X stash
+# X_kp1_L = dp.state_k_plus_1_given_k
 
-# # P_k|L
-# P_k_L = P_k_k + S_k @ (P_kp1_L - P_kp1_k) @ S_k.T
+# # X_L-1|L = X_k|k+1
+# X_k_L = X_k_k + S_k @ (X_kp1_L - Phi @ X_k_k)
+
+# # # P_k+1|L
+# # P_kp1_L = P_smoothed[-1]
+
+# # # P_k|L
+# # P_k_L = P_k_k + S_k @ (P_kp1_L - P_kp1_k) @ S_k.T

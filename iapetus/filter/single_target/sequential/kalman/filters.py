@@ -130,7 +130,9 @@ class LinearizedKalmanFilter:
         return means, stms
 
     def predict(self, idx: int, dx: np.ndarray, P: np.ndarray):
+        # print(f"idx: {idx}")
         x = self.predicted_states[idx]
+        # print(f"x: {x}")
         phi = self.error_state_transition_matrices[idx]
         Q = self.Q(self.dt, x)
         dx = phi @ dx
@@ -140,7 +142,7 @@ class LinearizedKalmanFilter:
 
     def update(
         self,
-        dx: np.ndarray,
+        dx_k: np.ndarray,
         x: np.ndarray,
         P: np.ndarray,
         z: ProbabilisticObservation,
@@ -152,8 +154,9 @@ class LinearizedKalmanFilter:
             @ H_tilde.T
             @ np.linalg.inv(H_tilde @ P @ H_tilde.T + z.covariance.matrix)
         )
-        dx = dx + K @ (b_tilde - H_tilde @ dx)
-        P = P - K @ H_tilde @ P
+        dx = dx_k + K @ (b_tilde - H_tilde @ dx_k)
+        # P = P - K @ H_tilde @ P
+        P = (np.eye(2) - K @ H_tilde) @ P
         x = x + dx
 
         return dx, x, P, b_tilde
@@ -207,8 +210,9 @@ class LinearizedKalmanFilter:
                 )
             )
             k += 1
-            dx_k = dx_k_plus_1_given_k
-            P_k = P_k_plus_1_given_k
+            x_k = self.predicted_states[idx]
+            dx_k = dx_k_plus_1
+            P_k = P_k_plus_1
 
         return data_points
 

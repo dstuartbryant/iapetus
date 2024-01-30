@@ -84,21 +84,46 @@ def sequential_propagator_deriv_fcn(t, y):
 
 
 def sequential_propagator(X0, T):
+    states = [X0]
+    stms = [np.eye(2)]
     phi_0 = np.eye(2)
     X_k = X0
     for t_kp1, t_k in zip(T[1:], T[:-1]):
         tspan = [t_k, t_kp1]
         dt = t_kp1 - t_k
-        X0 = add_stm_to_state_vector(X0, phi)
-        T_out, Y_out = rk45(sequential_propagator_deriv_fcn, X0, T, 1, 1e-3)
+        X_k = add_stm_to_state_vector(X_k, phi_0)
+        T_out, Y_out = rk45(
+            sequential_propagator_deriv_fcn, X_k, tspan, dt, 1e-3
+        )
+        x, phi = remove_stm_from_state_vector(Y_out[-1])
 
-    states = []
-    stms = []
-    for idx in range(len(Y)):
-        x, phi = remove_stm_from_state_vector(Y[idx])
         states.append(x)
         stms.append(phi)
-    return T, states, stms
+        X_k = x
+
+    return states, stms
+
+
+def sequential_propagator_2(t0: float, X0: np.ndarray, t: float):
+    phi = np.eye(2)
+    tspan = [t0, t]
+    dt = t - t0
+    X0 = add_stm_to_state_vector(X0, phi)
+    _, Y = rk45(sequential_propagator_deriv_fcn, X0, tspan, dt, 1e-3)
+    x, phi = remove_stm_from_state_vector(Y[-1])
+    return x, phi
+
+
+def sequential_propagator_iterator(X0, T):
+    states = [X0]
+    stms = [np.eye(2)]
+    X_k = X0
+    for t_kp1, t_k in zip(T[1:], T[:-1]):
+        x, phi = sequential_propagator_2(t_k, X_k, t_kp1)
+        states.append(x)
+        stms.append(phi)
+        X_k = x
+    return states, stms
 
 
 X0 = np.array([3.0, 0.0])
@@ -117,7 +142,7 @@ for t in T:
 
 # ----------------- Run Sequential Prop ------------------------
 
-T_out, X_seq, Phi_seq = sequential_propagator(X0, T)
+X_seq, Phi_seq = sequential_propagator_iterator(X0, T)
 
 
 # ---------------- Compare Output without using STM -----------------------
@@ -131,8 +156,8 @@ for idx in range(len(X_batch)):
 mean_dx = np.mean(dx)
 mean_dv = np.mean(dv)
 
-assert mean_dx < 1e-9
-assert mean_dv < 1e-9
+assert mean_dx < 1e-10
+assert mean_dv < 1e-10
 
 
 # ---------------- Compare Output By using STMs -----------------------
@@ -142,3 +167,15 @@ for idx in range(len(Phi_seq)):
     X_kp1 = Phi_seq[idx] @ X_k
     X_stm_states.append(X_kp1)
     X_k = X_kp1
+
+dx_2 = []
+dv_2 = []
+for idx in range(len(X_batch)):
+    dx_2.append(X_batch[idx][0] - X_stm_states[idx][0])
+    dv_2.append(X_batch[idx][1] - X_stm_states[idx][1])
+
+mean_dx_2 = np.mean(dx_2)
+mean_dv_2 = np.mean(dv_2)
+
+assert mean_dx_2 < 1e-10
+assert mean_dv_2 < 1e-10
