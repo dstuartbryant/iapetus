@@ -20,7 +20,7 @@ from iapetus.data.observation import (
 )
 from iapetus.data.state.probabilistic import State as Pstate
 from iapetus.filter.single_target.batch.batch_processor import batch_processor
-from iapetus.filter.single_target.sequential.kalman._filters import (
+from iapetus.filter.single_target.sequential.kalman.filters.lkf import (
     LinearizedKalmanFilter,
 )
 from iapetus.filter.single_target.sequential.kalman.process_noise import (
@@ -98,31 +98,16 @@ def deriv_fcn(t, y):
     return ydot
 
 
-def sequential_propagator(t0: float, X0: np.ndarray, t: float):
+def sequential_propagator(
+    t_k_minus_1: float, mean_k_minus_1: np.ndarray, t_k: float
+):
     phi = np.eye(2)
-    tspan = [t0, t]
-    dt = t - t0
-    X0 = add_stm_to_state_vector(X0, phi)
+    tspan = [t_k_minus_1, t_k]
+    dt = t_k - t_k_minus_1
+    X0 = add_stm_to_state_vector(mean_k_minus_1, phi)
     _, Y = rk45(deriv_fcn, X0, tspan, dt, 1e-3)
     x, phi = remove_stm_from_state_vector(Y[-1])
-    return x, phi
-
-
-def propagator_wrapper(t0: float, mean_k_minus_1: np.ndarray, T: List[float]):
-    """Wrapper for LKF implementation."""
-    if t0 != T[0]:
-        raise ValueError("First time stamp in T should match t0")
-
-    states = [mean_k_minus_1]
-    stms = [np.eye(2)]
-    X_k = mean_k_minus_1
-    for t_kp1, t_k in zip(T[1:], T[:-1]):
-        x, phi = sequential_propagator(t_k, X_k, t_kp1)
-        states.append(x)
-        stms.append(phi)
-        X_k = x
-
-    return T, states, stms
+    return t_k, x, phi
 
 
 def H_fcn(t: float, X: np.ndarray) -> np.ndarray:
@@ -183,30 +168,15 @@ propagated_batch_state, _ = propagator(t0, X0_i, Z.observations[-1].timestamp)
 # ----------------- Initilize LKF ---------------------
 
 LKF = LinearizedKalmanFilter(
-    propagator=propagator_wrapper,
-    process_noise=ZeroProcessNoise(),
+    propagator=sequential_propagator,
     H_fcn=H_fcn,
+    process_noise=ZeroProcessNoise(),
 )
 
-X_init_LKF = Pstate(timestamp=0, mean=X0, covariance=P0)
+X_init = Pstate(timestamp=0, mean=X0, covariance=P0)
 
 # ----------------- Run LKF ---------------------
 
-LKF_data = LKF(initial_state=X_init_LKF, observations=Z)
+lkf_data = LKF(X0=X_init, Z=Z)
 
-# lkf_ref_traj = [x.state_k_plus_1_given_k for x in LKF_data]
-lkf_ref_traj = [x.predicted_state for x in LKF_data]
-
-
-# last_lkf_mean = LKF_data[-1].state_k_plus_1
-
-last_lkf_mean_1 = LKF_data[-1].predicted_state + LKF_data[-1].state_error
-last_lkf_mean_2 = LKF_data[-1].updated_state
-
-
-# ----------------- Run Smoother  ---------------------
-
-smooth_data = lkf_smoother(LKF_data)
-
-smooth_state_error = smooth_data[-1].state_error
-x0_smooth_correction = X0 + smooth_state_error
+last_lkf_state = lkf_data[-1].state

@@ -11,7 +11,7 @@ from iapetus.data.observation import (
 from iapetus.data.state.probabilistic import State
 from iapetus.propagation.dynamics.linear import LinearStateTransitionMatrix
 
-from .data import LkfDataPoint
+from .data import LkfDataPoint, LkfDataPoint2
 from .process_noise import ProcessNoise
 from .propagators import ExtendedKalmanAstroPropagator
 
@@ -163,7 +163,7 @@ class LinearizedKalmanFilter:
 
     def __call__(
         self, initial_state: State, observations: ProbabilisticObservationSet
-    ) -> List[LkfDataPoint]:
+    ) -> List[LkfDataPoint2]:
         T = [x.timestamp for x in observations.observations]
         self.dt = T[1] - T[0]
         predicted_states, error_stms = self.propagate_reference_trajectory(
@@ -192,21 +192,33 @@ class LinearizedKalmanFilter:
                 P_k_plus_1_given_k,
                 z_k_plus_1,
             )
+            # data_points.append(
+            #     LkfDataPoint(
+            #         k=k,
+            #         state_k=x_k,
+            #         state_error_k=dx_k,
+            #         covariance_k=P_k,
+            #         error_state_transition_matrix_k_plus_1_k=Phi_k_plus_1_k,
+            #         state_k_plus_1_given_k=x_k_plus_1_given_k,
+            #         state_error_k_plus_1_given_k=dx_k_plus_1_given_k,
+            #         Q=Q,
+            #         covariance_k_plus_1_given_k=P_k_plus_1_given_k,
+            #         prefit_resid=prefit_resid,
+            #         state_k_plus_1=x_k_plus_1,
+            #         state_error_k_plus_1=dx_k_plus_1,
+            #         covariance_k_plus_1=P_k_plus_1,
+            #     )
+            # )
             data_points.append(
-                LkfDataPoint(
+                LkfDataPoint2(
                     k=k,
-                    state_k=x_k,
-                    state_error_k=dx_k,
-                    covariance_k=P_k,
-                    error_state_transition_matrix_k_plus_1_k=Phi_k_plus_1_k,
-                    state_k_plus_1_given_k=x_k_plus_1_given_k,
-                    state_error_k_plus_1_given_k=dx_k_plus_1_given_k,
-                    Q=Q,
-                    covariance_k_plus_1_given_k=P_k_plus_1_given_k,
-                    prefit_resid=prefit_resid,
-                    state_k_plus_1=x_k_plus_1,
-                    state_error_k_plus_1=dx_k_plus_1,
-                    covariance_k_plus_1=P_k_plus_1,
+                    timestamp=z_k_plus_1.timestamp,
+                    predicted_state=x_k_plus_1_given_k,
+                    updated_state=x_k_plus_1,
+                    state_error=dx_k_plus_1,
+                    error_state_transition_matrix=Phi_k_plus_1_k,
+                    covariance=P_k_plus_1,
+                    process_noise=Q,
                 )
             )
             k += 1

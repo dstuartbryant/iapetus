@@ -25,3 +25,20 @@ class LkfDataPoint(KalmanFilterDataPointBaseModel):
     state_k_plus_1: np.ndarray
     state_error_k_plus_1: np.ndarray
     covariance_k_plus_1: np.ndarray
+
+
+class LkfDataPoint2(KalmanFilterDataPointBaseModel):
+    k: int
+    timestamp: float
+    predicted_state: np.ndarray
+    updated_state: np.ndarray
+    state_error: np.ndarray
+    error_state_transition_matrix: np.ndarray
+    covariance: np.ndarray
+    process_noise: np.ndarray
+
+
+class SmoothedLkfDataPoint(KalmanFilterDataPointBaseModel):
+    k: int
+    state_error: np.ndarray
+    covariance: np.ndarray
