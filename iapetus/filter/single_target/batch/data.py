@@ -13,8 +13,8 @@ class BatchDataBaseModel(BaseModel):
 
 class BatchData(BatchDataBaseModel):
     timestamp: float
-    timesteps: List[float]
     state_error: np.ndarray
     covariance: np.ndarray
+    timesteps: List[float]
     residuals: List[np.ndarray]
-    error_state_transition_matrices: List[np.ndarray]
+    obs_error_covariances: List[np.ndarray]

@@ -18,7 +18,7 @@ from iapetus.data.observation import (
     ProbabilisticObservationSet,
 )
 from iapetus.data.state.probabilistic import State as Pstate
-from iapetus.filter.single_target.batch import batch_processor
+from iapetus.filter.single_target.batch import BatchIterator
 from iapetus.filter.single_target.sequential.kalman.filters import (
     LinearizedKalmanFilter,
 )
@@ -58,6 +58,42 @@ def propagator(t0: float, X0: np.ndarray, t: float):
     )
 
     return np.array([x, v]), Phi
+
+
+def batch_propagator(
+    t0: float, X0: np.ndarray, tspan: float, iconfig: object = None
+):
+    """Spring mass propagator based on Eq. 4.8.5 from Ref. [1].
+
+    ASSUMPTION: t0 = 0.
+    """
+    if t0 != 0:
+        raise ValueError("t0 should be zero.")
+
+    k1 = 2.5
+    k2 = 3.7
+    m = 1.5
+    w = np.sqrt((k1 + k2) / m)
+
+    x0 = X0[0]
+    v0 = X0[1]
+
+    Xref = []
+    Phis = []
+    for t in tspan:
+        x = x0 * math.cos(w * t) + v0 / w * math.sin(w * t)
+        v = v0 * math.cos(w * t) - x0 * w * math.sin(w * t)
+
+        Phi = np.array(
+            [
+                [math.cos(w * t), 1 / w * math.sin(w * t)],
+                [-w * math.sin(w * t), math.cos(w * t)],
+            ]
+        )
+        Xref.append(np.array([x, v]))
+        Phis.append(Phi)
+
+    return tspan, Xref, Phis
 
 
 def add_stm_to_state_vector(y, phi):
@@ -148,21 +184,37 @@ xbar0 = np.array([0, 0])
 X0_i = deepcopy(X0)
 P0_i = deepcopy(P0)
 xbar = deepcopy(xbar0)
-xhats = []
-for i in range(1):
-    (
-        xhat,
-        xhat_fwd,
-        P,
-        batch_residuals,
-        batch_predicted_states,
-        batch_stms,
-    ) = batch_processor(t0, X0_i, P0_i, xbar, Z, propagator, H_fcn)
-    xhats.append(xhat)
-    X0_i += xhat
-    xbar = xbar - xhat
+# xhats = []
+# for i in range(1):
+#     (
+#         xhat,
+#         xhat_fwd,
+#         P,
+#         batch_residuals,
+#         batch_predicted_states,
+#         batch_stms,
+#     ) = batch_processor(t0, X0_i, P0_i, xbar, Z, propagator, H_fcn)
+#     xhats.append(xhat)
+#     X0_i += xhat
+#     xbar = xbar - xhat
 
-propagated_batch_state, _ = propagator(t0, X0_i, Z.observations[-1].timestamp)
+# propagated_batch_state, _ = propagator(t0, X0_i, Z.observations[-1].timestamp)
+
+batch = BatchIterator(
+    batch_iter_tol=1e-3,
+    batch_max_iter=1,
+    integrator_time_step=0.1,
+    integrator_time_step_tolerance=1e-2,
+)
+X_out_batch = batch(
+    Pstate(timestamp=t0, mean=X0_i, covariance=P0_i),
+    xbar=np.array([0, 0]),
+    obs=Z,
+    propagator=batch_propagator,
+    H_fcn=H_fcn,
+)
+
+X_batch_est = X_out_batch.mean
 
 # ----------------- Initilize LKF ---------------------
 

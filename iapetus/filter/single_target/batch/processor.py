@@ -7,15 +7,18 @@ import numpy as np
 
 from iapetus.data.observation import ProbabilisticObservationSet
 from iapetus.data.state.probabilistic import State as Pstate
+from iapetus.propagation.integrators import IntegrateConfig
 
 from .data import BatchData
+from .propagators import BatchPropagator
 
 
 def batch_processor(
     init_state: Pstate,
     xbar: np.ndarray,
     obs: ProbabilisticObservationSet,
-    propagator: Callable,
+    propagator: BatchPropagator,
+    iconfig: IntegrateConfig,
     H_fcn: Callable,
 ):
     T = [x.timestamp for x in obs.observations]
@@ -26,12 +29,12 @@ def batch_processor(
     # Propagate reference trajectory
     X_ref = []
     STMS = []
-    for t in T:
-        x, phi = propagator(t0, X0, t)
-        X_ref.append(x)
-        STMS.append(phi)
+    Tout, X_ref, STMS = propagator(
+        t0=init_state.timestamp, X0=init_state.mean, tspan=T, iconfig=iconfig
+    )
 
     residuals = []
+    obs_error_covs = []
     for idx, z in enumerate(obs.observations):
         x_ref = X_ref[idx]
         phi = STMS[idx]
@@ -40,6 +43,7 @@ def batch_processor(
         residuals.append(resid)
         H = H_tilde @ phi
         R = z.covariance.matrix
+        obs_error_covs.append(R)
         R_inv = np.linalg.inv(R)
         Lam += H.T @ R_inv @ H
         N += H.T @ R_inv @ resid
@@ -48,4 +52,11 @@ def batch_processor(
     xhat = np.linalg.inv(Lam) @ N
     P = np.linalg.inv(Lam)
 
-    return xhat, P, residuals, X_ref, STMS
+    return BatchData(
+        timestamp=init_state.timestamp,
+        state_error=xhat,
+        covariance=P,
+        timesteps=T,
+        residuals=residuals,
+        obs_error_covariances=obs_error_covs,
+    )

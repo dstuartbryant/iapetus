@@ -31,6 +31,8 @@ def get_integrator(name: str):
 
 class AstroProp:
     """
+    Astrodynamics propagator class.
+
     User initializes this, say, as "ap".
 
     Then calls ap.user_defined_numerical_initial_state_model to get container
