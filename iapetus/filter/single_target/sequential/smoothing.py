@@ -8,14 +8,14 @@ from typing import List
 
 import numpy as np
 
-from .kalman.data import LkfDataPoint, LkfDataPoint2, SmoothedLkfDataPoint
+from .kalman.data import LkfDataPoint, SmoothedLkfDataPoint
 
 
 class SmootherError(Exception):
     pass
 
 
-def lkf_smoother(data: List[LkfDataPoint2]):
+def lkf_smoother(data: List[LkfDataPoint]):
     """Smoother for linearize Kalman filter (LKF).
 
     NOTE: Assumptions:
@@ -57,6 +57,7 @@ def lkf_smoother(data: List[LkfDataPoint2]):
         SmoothedLkfDataPoint(k=k, state_error=x_k_L, covariance=P_k_L)
     )
 
+    # Remainder of smoother iterations
     while k > 0:
         k -= 1
         P_k_k = data[k].covariance

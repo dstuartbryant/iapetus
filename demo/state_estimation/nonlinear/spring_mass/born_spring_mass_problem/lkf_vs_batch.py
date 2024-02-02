@@ -10,7 +10,6 @@ import json
 import math
 from copy import deepcopy
 from os import path
-from typing import List
 
 import numpy as np
 
@@ -19,8 +18,8 @@ from iapetus.data.observation import (
     ProbabilisticObservationSet,
 )
 from iapetus.data.state.probabilistic import State as Pstate
-from iapetus.filter.single_target.batch.batch_processor import batch_processor
-from iapetus.filter.single_target.sequential.kalman._filters import (
+from iapetus.filter.single_target.batch import batch_processor
+from iapetus.filter.single_target.sequential.kalman.filters import (
     LinearizedKalmanFilter,
 )
 from iapetus.filter.single_target.sequential.kalman.process_noise import (
@@ -98,31 +97,16 @@ def deriv_fcn(t, y):
     return ydot
 
 
-def sequential_propagator(t0: float, X0: np.ndarray, t: float):
+def sequential_propagator(
+    t_k_minus_1: float, mean_k_minus_1: Pstate, t_k: float
+):
     phi = np.eye(2)
-    tspan = [t0, t]
-    dt = t - t0
-    X0 = add_stm_to_state_vector(X0, phi)
-    _, Y = rk45(deriv_fcn, X0, tspan, dt, 1e-3)
+    tspan = [t_k_minus_1, t_k]
+    dt = t_k - t_k_minus_1
+    X0 = add_stm_to_state_vector(mean_k_minus_1, phi)
+    tout, Y = rk45(deriv_fcn, X0, tspan, dt, 1e-3)
     x, phi = remove_stm_from_state_vector(Y[-1])
-    return x, phi
-
-
-def propagator_wrapper(t0: float, mean_k_minus_1: np.ndarray, T: List[float]):
-    """Wrapper for LKF implementation."""
-    if t0 != T[0]:
-        raise ValueError("First time stamp in T should match t0")
-
-    states = [mean_k_minus_1]
-    stms = [np.eye(2)]
-    X_k = mean_k_minus_1
-    for t_kp1, t_k in zip(T[1:], T[:-1]):
-        x, phi = sequential_propagator(t_k, X_k, t_kp1)
-        states.append(x)
-        stms.append(phi)
-        X_k = x
-
-    return T, states, stms
+    return tout, x, phi
 
 
 def H_fcn(t: float, X: np.ndarray) -> np.ndarray:
@@ -183,7 +167,7 @@ propagated_batch_state, _ = propagator(t0, X0_i, Z.observations[-1].timestamp)
 # ----------------- Initilize LKF ---------------------
 
 LKF = LinearizedKalmanFilter(
-    propagator=propagator_wrapper,
+    propagator=sequential_propagator,
     process_noise=ZeroProcessNoise(),
     H_fcn=H_fcn,
 )

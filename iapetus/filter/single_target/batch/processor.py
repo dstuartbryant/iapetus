@@ -1,23 +1,25 @@
-"""Batch least squares processor."""
+"""Batch least squares module."""
+
 
 from typing import Callable
 
 import numpy as np
 
 from iapetus.data.observation import ProbabilisticObservationSet
+from iapetus.data.state.probabilistic import State as Pstate
+
+from .data import BatchData
 
 
 def batch_processor(
-    t0: float,
-    X0: np.ndarray,
-    P0: np.ndarray,
+    init_state: Pstate,
     xbar: np.ndarray,
     obs: ProbabilisticObservationSet,
     propagator: Callable,
     H_fcn: Callable,
 ):
     T = [x.timestamp for x in obs.observations]
-    P = P0
+    P = init_state.covariance.matrix
     Lam = np.linalg.inv(P)
     N = Lam @ xbar
     COV = []
@@ -44,9 +46,6 @@ def batch_processor(
         COV.append(np.linalg.inv(Lam))
 
     xhat = np.linalg.inv(Lam) @ N
-    xhat_mapped_fwd = phi @ xhat
     P = np.linalg.inv(Lam)
-    # X0 += xhat
-    # xbar = xbar - xhat
 
-    return xhat, xhat_mapped_fwd, P, residuals, X_ref, STMS
+    return xhat, P, residuals, X_ref, STMS

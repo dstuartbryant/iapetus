@@ -11,9 +11,9 @@ from iapetus.data.observation import (
 from iapetus.data.state.probabilistic import State
 from iapetus.propagation.dynamics.linear import LinearStateTransitionMatrix
 
-from .data import LkfDataPoint, LkfDataPoint2
+from .data import LkfDataPoint
 from .process_noise import ProcessNoise
-from .propagators import ExtendedKalmanAstroPropagator
+from .propagators import KalmanPropagator
 
 
 class DiscrKalmanFilterError(Exception):
@@ -98,7 +98,7 @@ class LinearizedKalmanFilter:
 
     def __init__(
         self,
-        propagator: object,
+        propagator: KalmanPropagator,
         process_noise: ProcessNoise,
         H_fcn: Callable,
     ):
@@ -117,16 +117,27 @@ class LinearizedKalmanFilter:
         self.dt = 0
 
     def propagate_reference_trajectory(
-        self, t0: float, x0: np.ndarray, T: list[float]
+        self, state_k_minus_1: State, T: list[float]
     ):
         """Propagates initial state across all observation timestamps and
         returns trajectory and error state transition matrices.
         """
-        _, means, stms = self.propagator(
-            t0=t0,
-            mean_k_minus_1=x0,
-            T=T,
-        )
+        means = []
+        stms = []
+        t_k_minus_1 = state_k_minus_1.timestamp
+        mean_k_minus_1 = state_k_minus_1.mean
+
+        for t_k in T:
+            _, mean_k, error_state_transition_matrix = self.propagator(
+                t_k_minus_1=t_k_minus_1,
+                mean_k_minus_1=mean_k_minus_1,
+                t_k=t_k,
+            )
+            means.append(mean_k)
+            stms.append(error_state_transition_matrix)
+            t_k_minus_1 = t_k
+            mean_k_minus_1 = mean_k
+
         return means, stms
 
     def predict(self, idx: int, dx: np.ndarray, P: np.ndarray):
@@ -163,21 +174,19 @@ class LinearizedKalmanFilter:
 
     def __call__(
         self, initial_state: State, observations: ProbabilisticObservationSet
-    ) -> List[LkfDataPoint2]:
+    ) -> List[LkfDataPoint]:
         T = [x.timestamp for x in observations.observations]
         self.dt = T[1] - T[0]
         predicted_states, error_stms = self.propagate_reference_trajectory(
-            initial_state.timestamp, initial_state.mean, T
+            state_k_minus_1=initial_state, T=T
         )
         self.predicted_states = predicted_states
         self.error_state_transition_matrices = error_stms
         data_points = []
         k = 0
-        x_k = initial_state.mean
         dx_k = np.zeros((len(initial_state.mean),))
         P_k = initial_state.covariance.matrix
         for idx, z_k_plus_1 in enumerate(observations.observations):
-            print(f"k: {k}")
             (
                 dx_k_plus_1_given_k,
                 x_k_plus_1_given_k,
@@ -192,25 +201,8 @@ class LinearizedKalmanFilter:
                 P_k_plus_1_given_k,
                 z_k_plus_1,
             )
-            # data_points.append(
-            #     LkfDataPoint(
-            #         k=k,
-            #         state_k=x_k,
-            #         state_error_k=dx_k,
-            #         covariance_k=P_k,
-            #         error_state_transition_matrix_k_plus_1_k=Phi_k_plus_1_k,
-            #         state_k_plus_1_given_k=x_k_plus_1_given_k,
-            #         state_error_k_plus_1_given_k=dx_k_plus_1_given_k,
-            #         Q=Q,
-            #         covariance_k_plus_1_given_k=P_k_plus_1_given_k,
-            #         prefit_resid=prefit_resid,
-            #         state_k_plus_1=x_k_plus_1,
-            #         state_error_k_plus_1=dx_k_plus_1,
-            #         covariance_k_plus_1=P_k_plus_1,
-            #     )
-            # )
             data_points.append(
-                LkfDataPoint2(
+                LkfDataPoint(
                     k=k,
                     timestamp=z_k_plus_1.timestamp,
                     predicted_state=x_k_plus_1_given_k,
@@ -222,7 +214,6 @@ class LinearizedKalmanFilter:
                 )
             )
             k += 1
-            x_k = self.predicted_states[idx]
             dx_k = dx_k_plus_1
             P_k = P_k_plus_1
 
@@ -235,7 +226,7 @@ class ExtendedKalmanFilter:
     def __init__(
         self,
         initial_state: State,
-        propagator: ExtendedKalmanAstroPropagator,
+        propagator: KalmanPropagator,
         process_noise: ProcessNoise,
         H_fcn: Callable,
         num_postponing_obs: int = 3,
