@@ -32,37 +32,7 @@ CURR_DIR = path.dirname(path.abspath(__file__))
 OBS_PATH = path.join(CURR_DIR, "obs_data.json")
 
 
-def propagator(t0: float, X0: np.ndarray, t: float):
-    """Spring mass propagator based on Eq. 4.8.5 from Ref. [1].
-
-    ASSUMPTION: t0 = 0.
-    """
-    if t0 != 0:
-        raise ValueError("t0 should be zero.")
-
-    k1 = 2.5
-    k2 = 3.7
-    m = 1.5
-    w = np.sqrt((k1 + k2) / m)
-
-    x0 = X0[0]
-    v0 = X0[1]
-    x = x0 * math.cos(w * t) + v0 / w * math.sin(w * t)
-    v = v0 * math.cos(w * t) - x0 * w * math.sin(w * t)
-
-    Phi = np.array(
-        [
-            [math.cos(w * t), 1 / w * math.sin(w * t)],
-            [-w * math.sin(w * t), math.cos(w * t)],
-        ]
-    )
-
-    return np.array([x, v]), Phi
-
-
-def batch_propagator(
-    t0: float, X0: np.ndarray, tspan: float, iconfig: object = None
-):
+def batch_propagator(t0: float, X0: np.ndarray, tspan: float):
     """Spring mass propagator based on Eq. 4.8.5 from Ref. [1].
 
     ASSUMPTION: t0 = 0.
@@ -184,28 +154,8 @@ xbar0 = np.array([0, 0])
 X0_i = deepcopy(X0)
 P0_i = deepcopy(P0)
 xbar = deepcopy(xbar0)
-# xhats = []
-# for i in range(1):
-#     (
-#         xhat,
-#         xhat_fwd,
-#         P,
-#         batch_residuals,
-#         batch_predicted_states,
-#         batch_stms,
-#     ) = batch_processor(t0, X0_i, P0_i, xbar, Z, propagator, H_fcn)
-#     xhats.append(xhat)
-#     X0_i += xhat
-#     xbar = xbar - xhat
 
-# propagated_batch_state, _ = propagator(t0, X0_i, Z.observations[-1].timestamp)
-
-batch = BatchIterator(
-    batch_iter_tol=1e-3,
-    batch_max_iter=1,
-    integrator_time_step=0.1,
-    integrator_time_step_tolerance=1e-2,
-)
+batch = BatchIterator(batch_iter_tol=1e-3, batch_max_iter=1)
 X_out_batch = batch(
     Pstate(timestamp=t0, mean=X0_i, covariance=P0_i),
     xbar=np.array([0, 0]),
@@ -229,16 +179,6 @@ X_init_LKF = Pstate(timestamp=0, mean=X0, covariance=P0)
 # ----------------- Run LKF ---------------------
 
 LKF_data = LKF(initial_state=X_init_LKF, observations=Z)
-
-# lkf_ref_traj = [x.state_k_plus_1_given_k for x in LKF_data]
-lkf_ref_traj = [x.predicted_state for x in LKF_data]
-
-
-# last_lkf_mean = LKF_data[-1].state_k_plus_1
-
-last_lkf_mean_1 = LKF_data[-1].predicted_state + LKF_data[-1].state_error
-last_lkf_mean_2 = LKF_data[-1].updated_state
-
 
 # ----------------- Run Smoother  ---------------------
 

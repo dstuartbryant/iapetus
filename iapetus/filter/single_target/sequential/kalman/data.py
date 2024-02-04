@@ -13,6 +13,7 @@ class LkfDataPoint(KalmanFilterDataPointBaseModel):
     k: int
     timestamp: float
     predicted_state: np.ndarray
+    residual: np.ndarray
     updated_state: np.ndarray
     state_error: np.ndarray
     error_state_transition_matrix: np.ndarray

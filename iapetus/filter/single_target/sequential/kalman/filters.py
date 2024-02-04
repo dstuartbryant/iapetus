@@ -167,7 +167,7 @@ class LinearizedKalmanFilter:
         )
         dx = dx_k + K @ (b_tilde - H_tilde @ dx_k)
         # P = P - K @ H_tilde @ P
-        P = (np.eye(2) - K @ H_tilde) @ P
+        P = (np.eye(len(x)) - K @ H_tilde) @ P
         x = x + dx
 
         return dx, x, P, b_tilde
@@ -206,6 +206,7 @@ class LinearizedKalmanFilter:
                     k=k,
                     timestamp=z_k_plus_1.timestamp,
                     predicted_state=x_k_plus_1_given_k,
+                    residual=prefit_resid,
                     updated_state=x_k_plus_1,
                     state_error=dx_k_plus_1,
                     error_state_transition_matrix=Phi_k_plus_1_k,

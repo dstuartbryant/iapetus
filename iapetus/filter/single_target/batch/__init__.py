@@ -1,7 +1,7 @@
 """Batch least squares module."""
 
 from copy import deepcopy
-from typing import List
+from typing import List, Optional
 
 from .processor import Callable  # BatchData,
 from .processor import (
@@ -17,13 +17,7 @@ from .processor import (
 class BatchIterator:
     """Batch processing iterator class."""
 
-    def __init__(
-        self,
-        batch_iter_tol: float,
-        batch_max_iter: int,
-        integrator_time_step: float,
-        integrator_time_step_tolerance: float,
-    ):
+    def __init__(self, batch_iter_tol: float, batch_max_iter: int):
         """
         Args:
             batch_iter_tol (float): Iteration error tolerance; determines when
@@ -37,9 +31,6 @@ class BatchIterator:
         """
         self.iter_tol = batch_iter_tol
         self.max_iter = batch_max_iter
-        self.iconfig = IntegrateConfig(
-            dt=integrator_time_step, tol=integrator_time_step_tolerance
-        )
         self.num_iter = 0
         self.residuals_rms = []
         self.diff_residuals_rms = []
@@ -64,12 +55,35 @@ class BatchIterator:
         obs: ProbabilisticObservationSet,
         propagator: BatchPropagator,
         H_fcn: Callable,
+        iconfig: Optional[IntegrateConfig] = None,
     ):
+        """
+        Args:
+            init_state  (Pstate): initial state with timestamp, mean state
+                vector, and covariance matrix attributes
+            xbar (np.ndarray): initial state error vector
+            obs (ProbabilisticObservationSet): Set of observations
+            propagator (BatchPropagator): propagator instance that generate
+                reference trajectory
+            H_fcn (Callable): encapsulates mapping from state space to
+                observation space
+            iconfig (IntegrateConfig, optional): integrator configuration, if
+                the propagator includes an integrator without default configs
+
+        Returns:
+            (Pstate): updated state based on final iteration fo batch least
+                squares estimation
+        """
         state = deepcopy(init_state)
         for i in range(self.max_iter):
             self.num_iter += 1
             bd = batch_processor(
-                init_state, xbar, obs, propagator, self.iconfig, H_fcn
+                init_state=init_state,
+                xbar=xbar,
+                obs=obs,
+                propagator=propagator,
+                H_fcn=H_fcn,
+                iconfig=iconfig,
             )
             self.residuals_rms.append(
                 self.compute_residuals_rms(
@@ -87,13 +101,13 @@ class BatchIterator:
 
             if self.num_iter == self.max_iter:
                 state.covariance.matrix = bd.covariance
-                return state
+                return state, bd
 
             if self.num_iter > 1:
                 if self.diff_residuals_rms[-1] < self.iter_tol:
                     print("Stopping due to tolerance.")
                     state.covariance.matrix = bd.covariance
-                    return state
+                    return state, bd
 
         state.covariance.matrix = bd.covariance
-        return state
+        return state, bd
