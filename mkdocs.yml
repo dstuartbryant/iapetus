@@ -88,4 +88,7 @@ nav:
       - Smoothing: explanation/single_target_estimation/smoothing.md
     - Multiple Target Estimation:
       - Probability Hypothesis Density: explanation/multi_target_estimation/phd_filter.md
+    - Statistics:
+      - Goodness of Fit Testing:
+        - Cramer-von Mises: explanation/statistics/goodness_of_fit_testing/cramer_von_mises_gof.md
 
