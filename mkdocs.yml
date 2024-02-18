@@ -22,6 +22,7 @@ theme:
     - navigation.expand
 
 plugins:
+  - plotly
   - mkdocstrings
   - caption
   - bibtex:
@@ -47,6 +48,9 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+        - name: plotly
+          class: mkdocs-plotly
+          format: !!python/name:mkdocs_plotly_plugin.fences.fence_plotly
   
 
 extra_javascript:
@@ -90,5 +94,5 @@ nav:
       - Probability Hypothesis Density: explanation/multi_target_estimation/phd_filter.md
     - Statistics:
       - Goodness of Fit Testing:
-        - Cramer-von Mises: explanation/statistics/goodness_of_fit_testing/cramer_von_mises_gof.md
+        - Cramér-von Mises: explanation/statistics/goodness_of_fit_testing/cramer_von_mises_gof.md
 
